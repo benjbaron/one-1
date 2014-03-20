@@ -47,6 +47,8 @@ public class EpidemicOracleRouter extends ActiveRouter {
 	
 	@Override
 	public void changedConnection(Connection con) {
+		super.changedConnection(con);
+		
 		if (con.isUp()) {
 			DTNHost peer = con.getOtherNode(getHost());
 			List<Message> newMessages = new ArrayList<Message>();

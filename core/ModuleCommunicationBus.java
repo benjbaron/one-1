@@ -63,6 +63,18 @@ public class ModuleCommunicationBus {
 	}
 	
 	/**
+	 * Returns true if the bus contains a value for the given key
+	 * @param key The key for which a value's existence is checked
+	 * @return true if the value exists, false if not
+	 */
+	public boolean containsProperty(String key) {
+		if (this.values == null) {
+			return false;
+		}
+		return this.values.containsKey(key);
+	}
+	
+	/**
 	 * Updates a value for an existing property. For storing the value first 
 	 * time, {@link #addProperty(String, Object)} should be used which
 	 * checks for name space clashes.

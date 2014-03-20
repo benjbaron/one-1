@@ -16,12 +16,13 @@ import java.util.Set;
 
 import routing.maxprop.MaxPropDijkstra;
 import routing.maxprop.MeetingProbabilitySet;
+import routing.util.RoutingInfo;
+import util.Tuple;
 import core.Connection;
 import core.DTNHost;
 import core.Message;
 import core.Settings;
 import core.SimClock;
-import core.Tuple;
 
 /**
  * Implementation of MaxProp router as described in 
@@ -141,6 +142,8 @@ public class MaxPropRouterWithEstimation extends ActiveRouter {
 	
 	@Override
 	public void changedConnection(Connection con) {
+		super.changedConnection(con);
+		
 		if (con.isUp()) { // new connection
 			this.costsForMessages = null; // invalidate old cost estimates
 			
@@ -393,7 +396,7 @@ public class MaxPropRouterWithEstimation extends ActiveRouter {
 	 * (no messages in buffer or all messages in buffer are being sent and
 	 * exludeMsgBeingSent is true)
 	 */
-	protected Message getOldestMessage(boolean excludeMsgBeingSent) {
+	protected Message getNextMessageToRemove(boolean excludeMsgBeingSent) {
 		Collection<Message> messages = this.getMessageCollection();
 		List<Message> validMessages = new ArrayList<Message>();
 

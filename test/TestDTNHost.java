@@ -12,6 +12,7 @@ import core.DTNHost;
 import core.Message;
 import core.ModuleCommunicationBus;
 import core.NetworkInterface;
+import core.Settings;
 import core.SimClock;
 
 /**
@@ -33,10 +34,12 @@ public class TestDTNHost extends DTNHost {
 
 	
 	public TestDTNHost(List<NetworkInterface> li, 
-			ModuleCommunicationBus comBus) {
+			ModuleCommunicationBus comBus, Settings testSettings) {
 		super(null,null,"TST", li, comBus, 
 				new StationaryMovement(new Coord(0,0)), 
-				new PassiveRouter(new TestSettings()));
+				new PassiveRouter(
+						(testSettings == null ? new TestSettings() :
+							testSettings)));
 	}
 	
 	@Override

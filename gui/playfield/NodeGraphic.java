@@ -8,6 +8,7 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.geom.Ellipse2D;
 import java.util.ArrayList;
+import java.util.List;
 
 import core.Connection;
 import core.Coord;
@@ -19,10 +20,12 @@ import core.NetworkInterface;
  *
  */
 public class NodeGraphic extends PlayFieldGraphic {
-	private static boolean drawCoverage = true;
-	private static boolean drawNodeName = true;
-	private static boolean drawConnections = true;
-
+	private static boolean drawCoverage;
+	private static boolean drawNodeName;
+	private static boolean drawConnections;
+	private static boolean drawBuffer;
+	private static List<DTNHost> highlightedNodes;
+	
 	private static Color rangeColor = Color.GREEN;
 	private static Color conColor = Color.BLACK;
 	private static Color hostColor = Color.BLUE;
@@ -30,6 +33,8 @@ public class NodeGraphic extends PlayFieldGraphic {
 	private static Color msgColor1 = Color.BLUE;
 	private static Color msgColor2 = Color.GREEN;
 	private static Color msgColor3 = Color.RED;
+	
+	private static Color highlightedNodeColor = Color.MAGENTA;
 
 	private DTNHost node;
 
@@ -40,9 +45,22 @@ public class NodeGraphic extends PlayFieldGraphic {
 	@Override
 	public void draw(Graphics2D g2) {
 		drawHost(g2);
-		drawMessages(g2);
+		if (drawBuffer) {
+			drawMessages(g2);
+		}
 	}
 
+	/**
+	 * @return true if the node this graphic represents should be highlighted
+	 */
+	private boolean isHighlighted() {
+		if (highlightedNodes == null) {
+			return false;
+		} else {
+			return highlightedNodes.contains(node);
+		}
+	}
+	
 	/**
 	 * Visualize node's location, radio ranges and connections
 	 * @param g2 The graphic context to draw to
@@ -50,15 +68,17 @@ public class NodeGraphic extends PlayFieldGraphic {
 	private void drawHost(Graphics2D g2) {
 		Coord loc = node.getLocation();
 
-		if (drawCoverage && node.isActive()) {
-			ArrayList<NetworkInterface> interfaces = new ArrayList<NetworkInterface>();
+		if (drawCoverage && node.isRadioActive()) {
+			ArrayList<NetworkInterface> interfaces = 
+				new ArrayList<NetworkInterface>();
 			interfaces.addAll(node.getInterfaces());
 			for (NetworkInterface ni : interfaces) {
 				double range = ni.getTransmitRange();
 				Ellipse2D.Double coverage;
 
 				coverage = new Ellipse2D.Double(scale(loc.getX()-range),
-						scale(loc.getY()-range), scale(range * 2), scale(range * 2)); 
+						scale(loc.getY()-range), scale(range * 2), 
+						scale(range * 2)); 
 
 				// draw the "range" circle
 				g2.setColor(rangeColor);
@@ -73,16 +93,29 @@ public class NodeGraphic extends PlayFieldGraphic {
 			// create a copy to prevent concurrent modification exceptions
 			conList.addAll(node.getConnections());
 			for (Connection c : conList) {
-				Coord c2 = c.getOtherNode(node).getLocation();
-
+				DTNHost otherNode = c.getOtherNode(node);
+				Coord c2;
+				
+				if (otherNode == null) {
+					continue; /* disconnected before drawn */
+				}
+				c2 = otherNode.getLocation();				
 				g2.drawLine(scale(c1.getX()), scale(c1.getY()),
 						scale(c2.getX()), scale(c2.getY()));
 			}
 		}
 
-		g2.setColor(hostColor);	// draw rectangle to host's location
-		g2.drawRect(scale(loc.getX()-1),scale(loc.getY()-1),scale(2),scale(2));
 
+		/* draw node rectangle */
+		g2.setColor(hostColor);	
+		g2.drawRect(scale(loc.getX()-1),scale(loc.getY()-1),
+		scale(2),scale(2));
+
+		if (isHighlighted()) {
+			g2.setColor(highlightedNodeColor);
+			g2.fillRect(scale(loc.getX()) - 3 ,scale(loc.getY()) - 3, 6, 6);			
+		}
+		
 		if (drawNodeName) {
 			g2.setColor(hostNameColor);
 			// Draw node's address next to it
@@ -114,7 +147,18 @@ public class NodeGraphic extends PlayFieldGraphic {
 	public static void setDrawConnections(boolean draw) {
 		drawConnections = draw;
 	}
-
+	
+	/**
+	 * Sets whether node's message buffer is shown
+	 * @param draw If true, node's message buffer is drawn  
+	 */
+	public static void setDrawBuffer(boolean draw) {
+		drawBuffer = draw;
+	}
+	
+	public static void setHighlightedNodes(List<DTNHost> nodes) {
+		highlightedNodes = nodes;
+	}
 
 	/**
 	 * Visualize the messages this node is carrying

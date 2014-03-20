@@ -10,9 +10,10 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.util.List;
 
+import util.Tuple;
+
 import junit.framework.TestCase;
 import core.Coord;
-import core.Tuple;
 
 public class ExternalMovementReaderTest extends TestCase {
 	private ExternalMovementReader r;

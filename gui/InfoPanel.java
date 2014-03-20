@@ -47,14 +47,14 @@ public class InfoPanel extends JPanel implements ActionListener{
 	 * Show information about a host
 	 * @param host Host to show the information of
 	 */
-	@SuppressWarnings("unchecked")
 	public void showInfo(DTNHost host) {
-		Vector messages = new Vector<Message>(host.getMessageCollection());
+		Vector<Message> messages = 
+			new Vector<Message>(host.getMessageCollection());
 		Collections.sort(messages);
 		reset();
 		this.selectedHost = host;
-		String text = (host.isActive() ? "" : "INACTIVE ") + host + " at " +
-			host.getLocation();
+		String text = (host.isMovementActive() ? "" : "INACTIVE ") + host + 
+			" at " + host.getLocation();
 		
 		msgChooser = new JComboBox(messages);
 		msgChooser.insertItemAt(messages.size() + " messages", 0);

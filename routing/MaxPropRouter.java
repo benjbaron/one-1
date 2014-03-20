@@ -16,11 +16,12 @@ import java.util.Set;
 
 import routing.maxprop.MaxPropDijkstra;
 import routing.maxprop.MeetingProbabilitySet;
+import routing.util.RoutingInfo;
+import util.Tuple;
 import core.Connection;
 import core.DTNHost;
 import core.Message;
 import core.Settings;
-import core.Tuple;
 
 /**
  * Implementation of MaxProp router as described in 
@@ -60,6 +61,9 @@ public class MaxPropRouter extends ActiveRouter {
 	private Map<Integer, Double> costsForMessages;
 	/** From host of the last cost calculation */
 	private DTNHost lastCostFrom;
+	
+	/** Map of which messages have been sent to which hosts from this host */
+	private Map<DTNHost, Set<String>> sentMessages;
 		
 	/** Over how many samples the "average number of bytes transferred per
 	 * transfer opportunity" is taken */
@@ -113,10 +117,13 @@ public class MaxPropRouter extends ActiveRouter {
 		this.dijkstra = new MaxPropDijkstra(this.allProbs);
 		this.ackedMessageIds = new HashSet<String>();
 		this.avgSamples = new int[BYTES_TRANSFERRED_AVG_SAMPLES];
+		this.sentMessages = new HashMap<DTNHost, Set<String>>();
 	}	
 
 	@Override
 	public void changedConnection(Connection con) {
+		super.changedConnection(con);
+		
 		if (con.isUp()) { // new connection
 			this.costsForMessages = null; // invalidate old cost estimates
 			
@@ -203,11 +210,22 @@ public class MaxPropRouter extends ActiveRouter {
 	@Override
 	protected void transferDone(Connection con) {
 		Message m = con.getMessage();
+		String id = m.getId();
+		DTNHost recipient = con.getOtherNode(getHost());
+		Set<String> sentMsgIds = this.sentMessages.get(recipient);
+		
 		/* was the message delivered to the final recipient? */
-		if (m.getTo() == con.getOtherNode(getHost())) { 
+		if (m.getTo() == recipient) { 
 			this.ackedMessageIds.add(m.getId()); // yes, add to ACKed messages
 			this.deleteMessage(m.getId(), false); // delete from buffer
 		}
+		
+		/* update the map of where each message is already sent */
+		if (sentMsgIds == null) {
+			sentMsgIds = new HashSet<String>();
+			this.sentMessages.put(recipient, sentMsgIds);
+		}		
+		sentMsgIds.add(id);
 	}
 	
 	/**
@@ -250,7 +268,7 @@ public class MaxPropRouter extends ActiveRouter {
 	 * exludeMsgBeingSent is true)
 	 */
     @Override
-	protected Message getOldestMessage(boolean excludeMsgBeingSent) {
+	protected Message getNextMessageToRemove(boolean excludeMsgBeingSent) {
 		Collection<Message> messages = this.getMessageCollection();
 		List<Message> validMessages = new ArrayList<Message>();
 
@@ -335,6 +353,7 @@ public class MaxPropRouter extends ActiveRouter {
 		for (Connection con : getConnections()) {
 			DTNHost other = con.getOtherNode(getHost());
 			MaxPropRouter othRouter = (MaxPropRouter)other.getRouter();
+			Set<String> sentMsgIds = this.sentMessages.get(other);
 			
 			if (othRouter.isTransferring()) {
 				continue; // skip hosts that are transferring
@@ -347,6 +366,12 @@ public class MaxPropRouter extends ActiveRouter {
 						m.getHops().contains(other)) {
 					continue; 
 				}
+				/* skip message if this host has already sent it to the other
+				   host (regardless of if the other host still has it) */
+				if (sentMsgIds != null && sentMsgIds.contains(m.getId())) {
+					continue;
+				}
+				/* message was a good candidate for sending */
 				messages.add(new Tuple<Message, Connection>(m,con));
 			}			
 		}

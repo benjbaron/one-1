@@ -18,6 +18,8 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.Stack;
 
+import util.Range;
+
 /**
  * Interface for simulation settings stored in setting file(s). Settings 
  * class should be initialized before using (with {@link #init(String)}). If
@@ -124,6 +126,19 @@ public class Settings {
 	}
 	
 	/**
+	 * Makes sure that the given settings value is positive
+	 * @param value Value to check
+	 * @param settingName Name of the setting (for error's message)
+	 * @throws SettingsError if the value was not positive
+	 */
+	public void ensurePositiveValue(double value, String settingName) {
+		if (value < 0) {
+			throw new SettingsError("Negative value (" + value + 
+					") not accepted for setting " + settingName);
+		}
+	}
+	
+	/**
 	 * Sets the namespace to something else than the current namespace.
 	 * This change can be reverted using {@link #restoreNameSpace()}
 	 * @param namespace The new namespace
@@ -132,7 +147,21 @@ public class Settings {
 		this.oldNamespaces.push(this.namespace);
 		this.namespace = namespace;
 	}
-
+	
+	/**
+	 * Appends the given namespace to the the current namespace, <strong>
+	 * for both the primary and secondary namespace </strong>.
+	 * This change can be reverted using {@link #restoreNameSpace()} and
+	 * {@link #restoreSecondaryNamespace()}.
+	 * @param namespace The new namespace to append
+	 */
+	public void setSubNameSpace(String namespace) {
+		this.oldNamespaces.push(this.namespace);
+		this.namespace = this.namespace + "." + namespace;
+		this.secondaryNamespaces.push(this.secondaryNamespace);
+		this.secondaryNamespace = this.secondaryNamespace + "." + namespace;
+	}
+	
 	/**
 	 * Returns full (namespace prefixed) property name for a setting.
 	 * @param setting The name of the setting
@@ -161,6 +190,14 @@ public class Settings {
 		return this.namespace;
 	}
 	
+	/** 
+	 * Returns the secondary namespace of the settings object
+	 * @return the secondary namespace of the settings object
+	 */
+	public String getSecondaryNameSpace() {
+		return this.secondaryNamespace;
+	}
+	
 	/**
 	 * Sets a secondary namespace where a setting is searched from if it
 	 * isn't found from the primary namespace. Secondary namespace can
@@ -174,7 +211,7 @@ public class Settings {
 		this.secondaryNamespaces.push(this.secondaryNamespace);
 		this.secondaryNamespace = namespace;
 	}
-	
+		
 	/**
 	 * Restores the namespace that was in use before a call to setNameSpace
 	 * @see #setNameSpace(String)
@@ -190,6 +227,15 @@ public class Settings {
 	 */
 	public void restoreSecondaryNamespace() {
 		this.secondaryNamespace = this.secondaryNamespaces.pop();
+	}
+	
+	/**
+	 * Reverts the change made with {@link #setSubNameSpace(String)}, i.e., 
+	 * restores both the primary and secondary namespace.
+	 */
+	public void restoreSubNameSpace() {
+		restoreNameSpace();
+		restoreSecondaryNamespace();
 	}
 	
 	/**
@@ -344,6 +390,22 @@ public class Settings {
 	}
 	
 	/**
+	 * Returns the given setting if it exists, or defaultValue if the setting
+	 * does not exist
+	 * @param name The name of the setting
+	 * @param defaultValue The value to return if the given setting didn't exist
+	 * @return The setting value or the default value if the setting didn't
+	 * exist
+	 */
+	public String getSetting(String name, String defaultValue) {
+		if (!contains(name)) {
+			return defaultValue;
+		} else {
+			return getSetting(name);
+		}
+	}
+	
+	/**
 	 * Parses run-specific settings from a String value
 	 * @param value The String to parse
 	 * @return The runIndex % arrayLength'th value of the run array
@@ -395,6 +457,17 @@ public class Settings {
 	 */
 	public double getDouble(String name) {
 		return parseDouble(getSetting(name), name);
+	}
+	
+	/**
+	 * Returns a double-valued setting, or the default value if the given
+	 * setting does not exist
+	 * @param name Name of the setting to get
+	 * @param defaultValue The value to return if the setting doesn't exist
+	 * @return Value of the setting as a double (or the default value)
+	 */
+	public double getDouble(String name, double defaultValue) {
+		return parseDouble(getSetting(name, ""+defaultValue), name);
 	}
 	
 	/**
@@ -452,7 +525,7 @@ public class Settings {
 		
 		return values.toArray(new String[0]);
 	}
-
+	
 	/**
 	 * Returns a CSV setting containing expected amount of values.
 	 * Value part of the setting must be a list of 
@@ -499,7 +572,7 @@ public class Settings {
 	
 	/**
 	 * Parses a double array out of a String array
-	 * @param strings The array of strings containin double values
+	 * @param strings The array of strings containing double values
 	 * @param name Name of the setting
 	 * @return Array of double values parsed from the string values
 	 */
@@ -531,7 +604,28 @@ public class Settings {
 	public int[] getCsvInts(String name) {
 		return convertToInts(getCsvDoubles(name), name);	
 	}
-
+	
+	/**
+	 * Returns comma-separated ranges (e.g., "3-5, 17-20, 15")
+	 * @param name Name of the setting
+	 * @return Array of ranges that were comma-separated in the setting
+	 * @throws SettingsError if something went wrong with reading
+	 */
+	public Range[] getCsvRanges(String name) {
+		String[] strRanges = getCsvSetting(name);
+		Range[] ranges = new Range[strRanges.length];
+		
+		try {
+			for (int i=0; i < strRanges.length; i++) {
+				ranges[i] = new Range(strRanges[i]);
+			}
+		} catch (NumberFormatException nfe) {
+			throw new SettingsError("Invalid numeric range value in " + 
+					name, nfe);
+		}
+		
+		return ranges;
+	}
 	
 	/**
 	 * Returns an integer-valued setting 
@@ -540,6 +634,17 @@ public class Settings {
 	 */
 	public int getInt(String name) {
 		return convertToInt(getDouble(name), name);
+	}
+	
+	/**
+	 * Returns an integer-valued setting, or the default value if the
+	 * setting does not exist
+	 * @param name Name of the setting to get
+	 * @param defaultValue The value to return if the setting didn't exist
+	 * @return Value of the setting as an integer
+	 */
+	public int getInt(String name, int defaultValue) {
+		return convertToInt(getDouble(name, defaultValue), name);
 	}
 	
 	/**
@@ -608,10 +713,35 @@ public class Settings {
 		return value;
 	}
 	
+	/**
+	 * Returns the given boolean setting if it exists, or defaultValue if the 
+	 * setting does not exist
+	 * @param name The name of the setting
+	 * @param defaultValue The value to return if the given setting didn't exist
+	 * @return The setting value or the default value if the setting didn't
+	 * exist
+	 */
+	public boolean getBoolean(String name, boolean defaultValue) {
+		if (!contains(name)) {
+			return defaultValue;
+		} else {
+			return getBoolean(name);
+		}
+	}
+	
+	/**
+	 * Returns an ArithmeticCondition setting. See {@link ArithmeticCondition}
+	 * @param name Name of the setting to get
+	 * @return ArithmeticCondition from the setting
+ 	 * @throws SettingsError if the value wasn't a valid arithmetic expression
+	 */
+	public ArithmeticCondition getCondition(String name) {
+		return new ArithmeticCondition(getSetting(name));
+	}
 
 	/**
 	 * Creates (and dynamically loads the class of) an object that
-	 * intializes itself using the settings in this Settings object
+	 * initializes itself using the settings in this Settings object
 	 * (given as the only parameter to the constructor). 
 	 * @param className Name of the class of the object
 	 * @return Initialized object

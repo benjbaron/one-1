@@ -13,8 +13,9 @@ import java.awt.Graphics2D;
  * on the upper left corner of the playfield.
  */
 public class ScaleReferenceGraphic extends PlayFieldGraphic {
-	/** length of the reference bar (map meters) */
-	private final int LENGTH = 100; 
+	/** minimum length of the reference bar (pixels) */
+	private final int MIN_LENGTH = 30; 
+
 	/** x position of the left end of the bar (pixels) */
 	private final int X_POS = 20;
 	/** y position of the left end of the bar (pixels) */
@@ -28,8 +29,21 @@ public class ScaleReferenceGraphic extends PlayFieldGraphic {
 	
 	@Override
 	public void draw(Graphics2D g2) {
-		int endX = X_POS + scale(LENGTH);
+		int meterLen = 1;
+		String scaleUnit = "m";
+		double pixelLen = meterLen * scale;
+		int endX;
 		int h = SIZE/2;
+		
+		while (pixelLen < MIN_LENGTH) {
+			meterLen *= 10;
+			pixelLen = meterLen * scale;
+		}
+		if (meterLen >= 1000) {
+			scaleUnit = "km";
+			meterLen /= 1000;
+		}
+		endX = X_POS + (int)pixelLen;
 		
 		g2.setFont(new Font(null, Font.PLAIN, FONT_SIZE));
 		
@@ -38,7 +52,7 @@ public class ScaleReferenceGraphic extends PlayFieldGraphic {
 		g2.drawLine(X_POS, Y_POS, endX, Y_POS); // horizontal line
 		g2.drawLine(endX, Y_POS-h, endX, Y_POS+h);
 		
-		g2.drawString(LENGTH+"m", X_POS + scale(LENGTH)/2 - 12, Y_POS - 1);
+		g2.drawString(meterLen + scaleUnit, X_POS + 10, Y_POS - 1);
 	}
 
 }

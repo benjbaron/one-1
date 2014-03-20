@@ -7,7 +7,6 @@ package core;
 import input.EventQueue;
 import input.ExternalEvent;
 import input.ScheduledUpdatesQueue;
-import interfaces.ConnectivityGrid;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -19,29 +18,24 @@ import java.util.Random;
  * location and connections.
  */
 public class World {
-	/** namespace of optimization settings ({@value})*/
-	public static final String SETTINGS_NS = "Optimization";
-	/**
-	 * Cell based optimization cell size multiplier -setting id ({@value}).
-	 * Single ConnectivityCell's size is the biggest radio range times this.
-	 * Larger values save memory and decrease startup time but may result in
-	 * slower simulation.
-	 * Default value is {@link #DEF_CON_CELL_SIZE_MULT}.
-	 * Smallest accepted value is 2.
-	 * @see ConnectivityGrid
-	 */
-	public static final String CELL_SIZE_MULT_S = "cellSizeMult";
+	/** name space of optimization settings ({@value})*/
+	public static final String OPTIMIZATION_SETTINGS_NS = "Optimization";
+
 	/**
 	 * Should the order of node updates be different (random) within every 
 	 * update step -setting id ({@value}). Boolean (true/false) variable. 
 	 * Default is @link {@link #DEF_RANDOMIZE_UPDATES}.
 	 */
 	public static final String RANDOMIZE_UPDATES_S = "randomizeUpdateOrder";
-	/** default value for cell size multiplier ({@value}) */
-	public static final int DEF_CON_CELL_SIZE_MULT = 5;
 	/** should the update order of nodes be randomized -setting's default value
 	 * ({@value}) */
 	public static final boolean DEF_RANDOMIZE_UPDATES = true;
+	
+	/**
+	 * Should the connectivity simulation be stopped after one round 
+	 * -setting id ({@value}). Boolean (true/false) variable. 
+	 */
+	public static final String SIMULATE_CON_ONCE_S = "simulateConnectionsOnce";
 
 	private int sizeX;
 	private int sizeY;
@@ -61,9 +55,8 @@ public class World {
 	private List<UpdateListener> updateListeners;
 	/** Queue of scheduled update requests */
 	private ScheduledUpdatesQueue scheduledUpdates;
-
-	/** single ConnectivityCell's size is biggest radio range times this */
-	private int conCellSizeMult;
+	private boolean simulateConOnce;
+	private boolean isConSimulated;
 
 	/**
 	 * Constructor.
@@ -81,7 +74,8 @@ public class World {
 		
 		this.simClock = SimClock.getInstance();
 		this.scheduledUpdates = new ScheduledUpdatesQueue();
-		this.isCancelled = false;		
+		this.isCancelled = false;
+		this.isConSimulated = false;
 
 		setNextEventQueue();
 		initSettings();
@@ -91,31 +85,20 @@ public class World {
 	 * Initializes settings fields that can be configured using Settings class
 	 */
 	private void initSettings() {
-		Settings s = new Settings(SETTINGS_NS);
+		Settings s = new Settings(OPTIMIZATION_SETTINGS_NS);
 		boolean randomizeUpdates = DEF_RANDOMIZE_UPDATES;
 
 		if (s.contains(RANDOMIZE_UPDATES_S)) {
 			randomizeUpdates = s.getBoolean(RANDOMIZE_UPDATES_S);
 		}
+		simulateConOnce = s.getBoolean(SIMULATE_CON_ONCE_S, false);
+		
 		if(randomizeUpdates) {
 			// creates the update order array that can be shuffled
 			this.updateOrder = new ArrayList<DTNHost>(this.hosts);
 		}
 		else { // null pointer means "don't randomize"
 			this.updateOrder = null;
-		}
-
-		if (s.contains(CELL_SIZE_MULT_S)) {
-			conCellSizeMult = s.getInt(CELL_SIZE_MULT_S);
-		}
-		else {
-			conCellSizeMult = DEF_CON_CELL_SIZE_MULT;
-		}
-
-		// check that values are within limits
-		if (conCellSizeMult < 2) {
-			throw new SettingsError("Too small value (" + conCellSizeMult +
-					") for " + SETTINGS_NS + "." + CELL_SIZE_MULT_S);
 		}
 	}
 
@@ -216,6 +199,10 @@ public class World {
 				}
 				this.updateOrder.get(i).update(simulateConnections);
 			}			
+		}
+		
+		if (simulateConOnce && simulateConnections) {
+			simulateConnections = false;
 		}
 	}
 

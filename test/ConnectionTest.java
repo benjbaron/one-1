@@ -34,20 +34,22 @@ public class ConnectionTest extends TestCase {
 		super.setUp();
 		SimClock.reset(); 
 		clock.setTime(START_TIME);
+		TestSettings testSettings = new TestSettings();
+		testSettings.setNameSpace(TestUtils.IFACE_NS);
+		testSettings.putSetting(NetworkInterface.TRANSMIT_RANGE_S, "1.0");
+		testSettings.putSetting(NetworkInterface.TRANSMIT_SPEED_S, "1");
 		
 		h = new TestDTNHost[nrof];
 		c = new CBRConnection[nrof];
 		m = new Message[nrof];
 				
 		for (int i=0; i< nrof; i++) {
-			NetworkInterface ni = new TestInterface(1.0,1);
+			NetworkInterface ni = new TestInterface(testSettings);
 			List<NetworkInterface> li = new ArrayList<NetworkInterface>();
 			li.add(ni);
 
 			ModuleCommunicationBus comBus = new ModuleCommunicationBus();
-			comBus.addProperty(NetworkInterface.RANGE_ID, 1.0);
-			comBus.addProperty(NetworkInterface.SPEED_ID, 1);
-			h[i] = new TestDTNHost(li,comBus);
+			h[i] = new TestDTNHost(li,comBus, testSettings);
 			m[i] = new Message(h[0], h[i],""+i, size[i]);
 		}
 		

@@ -12,11 +12,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
+import util.Tuple;
+
 import core.Coord;
 import core.DTNSim;
 import core.Settings;
 import core.SimClock;
-import core.Tuple;
 
 /**
  * Movement model that uses external data of node locations.

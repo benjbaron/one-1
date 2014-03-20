@@ -16,7 +16,6 @@ import core.DTNHost;
 import core.MessageListener;
 import core.ModuleCommunicationBus;
 import core.NetworkInterface;
-import core.Settings;
 
 /**
  * Generic convenience methods for tests.
@@ -30,6 +29,9 @@ public class TestUtils {
 	private MessageRouter mr;
 	
 	private ModuleCommunicationBus comBus;
+	private TestSettings settings;
+	
+	public static String IFACE_NS = "interface";
 
 	/**
 	 * Creates a test utils object suitable for creating new hosts.
@@ -38,15 +40,14 @@ public class TestUtils {
 	 * @param settings Setting object given to message router
 	 */
 	public TestUtils(List<ConnectionListener> cl, List<MessageListener> ml,
-			Settings settings) {
+			TestSettings settings) {
 		this.conListeners = cl;
 		this.msgListeners = ml;
 		this.allHosts = new ArrayList<DTNHost>();
+		this.settings = settings;
 		this.mr = new PassiveRouter(settings);
 
 		this.comBus = new ModuleCommunicationBus();
-		comBus.addProperty(NetworkInterface.RANGE_ID, 1.0);
-		comBus.addProperty(NetworkInterface.SPEED_ID, 1);
 	}
 	
 	public void setMessageRouterProto(MessageRouter mr) {
@@ -80,13 +81,6 @@ public class TestUtils {
 	public void setTransmitRange(double transmitRange) {
 		this.comBus.updateProperty(NetworkInterface.RANGE_ID, transmitRange);
 	}
-
-	/**
-	 * @param transmitSpeed the transmitSpeed to set
-	 */
-	public void setTransmitSpeed(int transmitSpeed) {
-		this.comBus.updateProperty(NetworkInterface.SPEED_ID, transmitSpeed);
-	}
 	
 	/**
 	 * Creates a host to a location with stationary movement model and
@@ -106,10 +100,16 @@ public class TestUtils {
 	 * @param name name of the host
 	 * @return the host
 	 */
-	public DTNHost createHost(MovementModel mmProto, String name) {		
-		NetworkInterface ni = new TestInterface(
-				comBus.getDouble(NetworkInterface.RANGE_ID, -1),
-				comBus.getInt(NetworkInterface.SPEED_ID, -1));
+	public DTNHost createHost(MovementModel mmProto, String name) {
+		if (settings.getNameSpace() == null) {
+			settings.setNameSpace(IFACE_NS);
+		}
+		if (!this.settings.contains(NetworkInterface.TRANSMIT_RANGE_S)) {
+			settings.putSetting(NetworkInterface.TRANSMIT_RANGE_S, "1.0");
+			settings.putSetting(NetworkInterface.TRANSMIT_SPEED_S, "1");
+		}
+		
+		NetworkInterface ni = new TestInterface(settings);
 		ni.setClisteners(conListeners);
 		List<NetworkInterface> li = new ArrayList<NetworkInterface>();
 		li.add(ni);

@@ -83,7 +83,7 @@ public class ExternalMovementTest extends TestCase {
 
 		// h3 should not get any fancy coordinates
 		assertEquals(c0, h3.getLocation());
-		assertFalse(h3.isActive());
+		assertFalse(h3.isMovementActive());
 		
 		// test that h1 and h2 move according to input data
 		for (int i=0; i<INPUT_COORDS.length; i++) {
@@ -109,7 +109,7 @@ public class ExternalMovementTest extends TestCase {
 			moveAllHosts(CLOCK_STEP);
 			// h3 should not get any fancy coordinates
 			assertEquals(c0, h3.getLocation());
-			assertFalse(h3.isActive());
+			assertFalse(h3.isMovementActive());
 		}
 
 	}

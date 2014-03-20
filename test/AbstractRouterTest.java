@@ -12,6 +12,7 @@ import routing.MessageRouter;
 import core.Coord;
 import core.DTNHost;
 import core.MessageListener;
+import core.NetworkInterface;
 import core.SimClock;
 
 /**
@@ -54,8 +55,11 @@ public abstract class AbstractRouterTest extends TestCase {
 
 		List<MessageListener> ml = new ArrayList<MessageListener>();
 		ml.add(mc);
+
+		ts.setNameSpace(TestUtils.IFACE_NS);
+		ts.putSetting(NetworkInterface.TRANSMIT_SPEED_S, ""+TRANSMIT_SPEED);
+		
 		this.utils = new TestUtils(null,ml,ts);
-		this.utils.setTransmitSpeed(TRANSMIT_SPEED);
 		this.utils.setMessageRouterProto(routerProto);
 		core.NetworkInterface.reset();
 		core.DTNHost.reset();

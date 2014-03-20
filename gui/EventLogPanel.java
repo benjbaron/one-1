@@ -32,6 +32,18 @@ import core.SimClock;
 public class EventLogPanel extends JPanel 
 	implements ConnectionListener, MessageListener, ActionListener {
 
+	/** Event log panel settings namespace ({@value}) */
+	public static final String EL_PANEL_NS = "GUI.EventLogPanel";
+	
+	/** Number of events -setting id ({@value}). Defines the number of
+	 * events to show in the panel. */
+	public static final String NROF_EVENTS_S = "nrofEvents";
+	
+	/** Regular expression filter -setting id ({@value}). Defines the regular
+	 * expression against which the event texts are matched; only matching
+	 * events are not shown */
+	public static final String EVENTS_RE_S = "REfilter";
+	
 	private static final String PANEL_TITLE = "Event log";
 	/** format of a single log entry */
 	private static final String ENTRY_FORMAT = "% 9.1f: %s "; 
@@ -50,8 +62,9 @@ public class EventLogPanel extends JPanel
 	
 	/** Regular expression to filter log entries (changed trough Settings) */ 
 	private String regExp = null;
+	public static final int DEFAULT_MAX_NROF_EVENTS = 30;
 	/** how many events to show in log (changed trough Settings) */
-	private int maxNrofEvents = 30;
+	private int maxNrofEvents;
 	
 	private Font font;	// font used in log entries
 	private DTNSimGUI gui;
@@ -76,14 +89,11 @@ public class EventLogPanel extends JPanel
 	public EventLogPanel(DTNSimGUI gui) {
 		this.gui = gui;
 		String title = PANEL_TITLE;
-		Settings s = new Settings("GUI.EventLogPanel");
+		Settings s = new Settings(EL_PANEL_NS);
 		
-		if (s.contains("nrofEvents")) {
-			this.maxNrofEvents = s.getInt("nrofEvents");
-		}
-		if (s.contains("REfilter")) {
-			this.regExp = s.getSetting("REfilter");
-		}
+		this.maxNrofEvents = s.getInt(NROF_EVENTS_S,
+				DEFAULT_MAX_NROF_EVENTS);
+		this.regExp = s.getSetting(EVENTS_RE_S, null);
 		
 		layout = new GridLayout(maxNrofEvents,1);
 

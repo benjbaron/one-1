@@ -12,12 +12,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import routing.util.RoutingInfo;
+
+import util.Tuple;
+
 import core.Connection;
 import core.DTNHost;
 import core.Message;
 import core.Settings;
 import core.SimClock;
-import core.Tuple;
 
 /**
  * Implementation of PRoPHET router as described in 
@@ -95,6 +98,8 @@ public class ProphetRouter extends ActiveRouter {
 
 	@Override
 	public void changedConnection(Connection con) {
+		super.changedConnection(con);
+		
 		if (con.isUp()) {
 			DTNHost otherHost = con.getOtherNode(getHost());
 			updateDeliveryPredFor(otherHost);

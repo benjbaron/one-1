@@ -10,11 +10,12 @@ import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
 
+import util.ParetoRNG;
+
 import movement.map.DijkstraPathFinder;
 import movement.map.MapNode;
 import movement.map.SimMap;
 import core.Coord;
-import core.ParetoRNG;
 import core.Settings;
 import core.SimClock;
 

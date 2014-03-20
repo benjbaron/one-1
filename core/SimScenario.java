@@ -1,5 +1,5 @@
 /* 
- * Copyright 2010 Aalto University, ComNet
+ * Copyright 2011 Aalto University, ComNet
  * Released under GPLv3. See LICENSE.txt for details. 
  */
 package core;
@@ -60,8 +60,6 @@ public class SimScenario implements Serializable {
 	public static final String GROUP_ID_S = "groupID";
 	/** number of hosts in the group -setting id ({@value})*/
 	public static final String NROF_HOSTS_S = "nrofHosts";
-	/** scanning interval -setting id ({@value})*/
-	public static final String SCAN_INTERVAL_S = "scanInterval";
 	/** movement model class -setting id ({@value})*/
 	public static final String MOVEMENT_MODEL_S = "movementModel";
 	/** router class -setting id ({@value})*/
@@ -141,9 +139,9 @@ public class SimScenario implements Serializable {
 		this.updateInterval = s.getDouble(UP_INT_S);
 		this.simulateConnections = s.getBoolean(SIM_CON_S);
 
-		ensurePositiveValue(nrofGroups, NROF_GROUPS_S);
-		ensurePositiveValue(endTime, END_TIME_S);
-		ensurePositiveValue(updateInterval, UP_INT_S);
+		s.ensurePositiveValue(nrofGroups, NROF_GROUPS_S);
+		s.ensurePositiveValue(endTime, END_TIME_S);
+		s.ensurePositiveValue(updateInterval, UP_INT_S);
 
 		this.simMap = null;
 		this.maxHostRange = 1;
@@ -178,18 +176,7 @@ public class SimScenario implements Serializable {
 		return myinstance;
 	}
 
-	/**
-	 * Makes sure that a value is positive
-	 * @param value Value to check
-	 * @param settingName Name of the setting (for error's message)
-	 * @throws SettingsError if the value was not positive
-	 */
-	private void ensurePositiveValue(double value, String settingName) {
-		if (value < 0) {
-			throw new SettingsError("Negative value (" + value + 
-					") not accepted for setting " + settingName);
-		}
-	}
+
 
 	/**
 	 * Returns the name of the simulation run
@@ -328,7 +315,7 @@ public class SimScenario implements Serializable {
 		this.hosts = new ArrayList<DTNHost>();
 
 		for (int i=1; i<=nrofGroups; i++) {
-			List<NetworkInterface> mmNetInterfaces = 
+			List<NetworkInterface> interfaces = 
 				new ArrayList<NetworkInterface>();
 			Settings s = new Settings(GROUP_NS+i);
 			s.setSecondaryNamespace(GROUP_NS);
@@ -345,19 +332,20 @@ public class SimScenario implements Serializable {
 				(MessageRouter)s.createIntializedObject(ROUTING_PACKAGE + 
 						s.getSetting(ROUTER_S));
 			
-			// checks that these values are positive (throws Error if not)
-			ensurePositiveValue(nrofHosts, NROF_HOSTS_S);
-			ensurePositiveValue(nrofInterfaces, NROF_INTERF_S);
+			/* checks that these values are positive (throws Error if not) */
+			s.ensurePositiveValue(nrofHosts, NROF_HOSTS_S);
+			s.ensurePositiveValue(nrofInterfaces, NROF_INTERF_S);
 
 			// setup interfaces
 			for (int j=1;j<=nrofInterfaces;j++) {
-				String Intname = s.getSetting(INTERFACENAME_S+j);
-				Settings t = new Settings(Intname); 
-				NetworkInterface mmInterface = 
-					(NetworkInterface)t.createIntializedObject(INTTYPE_PACKAGE + 
-							t.getSetting(INTTYPE_S));
-				mmInterface.setClisteners(connectionListeners);
-				mmNetInterfaces.add(mmInterface);
+				String intName = s.getSetting(INTERFACENAME_S + j);
+				Settings intSettings = new Settings(intName); 
+				NetworkInterface iface = 
+					(NetworkInterface)intSettings.createIntializedObject(
+							INTTYPE_PACKAGE +intSettings.getSetting(INTTYPE_S));
+				iface.setClisteners(connectionListeners);
+				iface.setGroupSettings(s);
+				interfaces.add(iface);
 			}
 
 			// setup applications
@@ -401,7 +389,7 @@ public class SimScenario implements Serializable {
 				// prototypes are given to new DTNHost which replicates
 				// new instances of movement model and message router
 				DTNHost host = new DTNHost(this.messageListeners, 
-						this.movementListeners,	gid, mmNetInterfaces, comBus, 
+						this.movementListeners,	gid, interfaces, comBus, 
 						mmProto, mRouterProto);
 				hosts.add(host);
 			}

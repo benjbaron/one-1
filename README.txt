@@ -1,4 +1,4 @@
-The ONE v1.4.1 - Readme
+The ONE v1.5.1 - Readme
 =======================
 
 The ONE is a Opportunistic Network Environment simulator which provides a
@@ -72,7 +72,10 @@ CamelCase (and are case sensitive). Namespace defines (loosely) the part
 of the simulation environment where the setting has effect on. Many, but
 not all, namespaces are equal to the class name where they are read.
 Especially movement models, report modules and routing modules follow this
-convention.
+convention. In some cases the namespace is defined by the user: e.g., with 
+network interfaces user can pick up any idenfitier, define interface specific 
+settings in that namespace, and give the name of the namespace when 
+configuring which interface each group should use.
 
 Numeric values use '.' as the decimal separator and can be suffixed with
 kilo (k) mega (M) or giga (G) suffix. Boolean settings accept "true",
@@ -153,13 +156,13 @@ Movement models
 
 Movement models govern the way nodes move in the simulation. They provide 
 coordinates, speeds and pause times for the nodes. The basic installation 
-contains 5 movement models: random waypoint, map based movement, shortest 
-path map based movement, map route movement and external movement. All 
-models, except external movement, have configurable speed and pause time 
-distributions. A minimum and maximum values can be given and the movement 
-model draws uniformly distributed random values that are within the given 
-range. Same applies for pause times. In external movement model the speeds 
-and pause times are interpreted from the given data.
+contains, e.g., random waypoint, map based movement, shortest path map based 
+movement, map route movement and external movement. All these models, except 
+external movement, have configurable speed and pause time distributions. A 
+minimum and maximum values can be given and the movement model draws 
+uniformly distributed random values that are within the given range. Same 
+applies for pause times. In external movement model the speeds and pause 
+times are interpreted from the given data.
 
 When a node uses the random waypoint movement model (RandomWaypoint), it is 
 given a random coordinate in the simulation area. Node moves directly to the 
@@ -243,11 +246,12 @@ Routing modules and message creation
 ------------------------------------
 
 Routing modules define how the messages are handled in the simulation. Six 
-different active routing modules (First Contact, Epidemic, Spray and Wait, 
-Direct delivery, PRoPHET and MaxProp) and also a passive router for external 
-routing simulation are included in the package. The active routing modules are 
-implementations of the well known routing algorithms for DTN routing. See the 
-classes in routing package for details.
+basic active routing modules (First Contact, Epidemic, Spray and Wait, Direct 
+delivery, PRoPHET and MaxProp) and also a passive router for external routing 
+simulation are included in the package. The active routing modules are 
+implementations of the well known routing algorithms for DTN routing. There 
+are also variants of these models and couple of different models included in 
+the latest versions. See the classes in the routing package for details.
 
 Passive router is made especially for interacting with other (DTN) routing 
 simulators or running simulations that don't need any routing functionality. 
@@ -255,15 +259,17 @@ The router doesn't do anything unless commanded by external events. These
 external events are provided to the simulator by a class that implements the 
 EventQueue interface.  
 
-The current release includes two classes that can be used as a source of 
-message events: ExternalEventsQueue and MessageEventGenerator. The former 
-can read events from a file that can be created by hand, with a suitable 
-script (e.g., createCreates.pl script in the toolkit folder), or by 
-converting e.g., dtnsim2's output to suitable form. See StandardEventsReader 
-class from input package for details of the format. MessageEventGenerator is 
-a simple message generator class that creates uniformly distributed message 
-creation patterns with configurable message creation interval, message size 
-and source/destination host ranges.
+There are two basic classes that can be used as a source of message events: 
+ExternalEventsQueue and MessageEventGenerator. The former can read events 
+from a file that can be created by hand, with a suitable script (e.g., 
+createCreates.pl script in the toolkit folder), or by converting e.g., 
+dtnsim2's output to suitable form. See StandardEventsReader class from input 
+package for details of the format. MessageEventGenerator is a simple message 
+generator class that creates uniformly distributed message creation patterns 
+with configurable message creation interval, message size and 
+source/destination host ranges. More specific messaging scenarios can be 
+created with MessageBurstGenerator, and One{From,To}EachMessageGenerator 
+classes. See javadocs for details.
 
 The toolkit folder contains an experimental parser script (dtnsim2parser.pl) 
 for dtnsim2's output (there used to be a more capable Java-based parser but 
@@ -338,6 +344,7 @@ How many simulated seconds to simulate.
 Scenario.nrofHostGroups
 How many hosts group are present in the simulation.
 
+
 Interface settings (used to define the possible interfaces the nodes can have)
 ---
 
@@ -351,6 +358,7 @@ Range (meters) of the interface.
 
 transmitSpeed
 Transmit speed of the interface (bytes per second).
+
 
 Host group settings (used in Group or GroupN namespace):
 ---
@@ -390,7 +398,7 @@ accept any more messages unless it drops some old messages from the buffer.
 
 router
 Router module which is used to route messages. Must be a valid class 
-(subclass of Report class) name from routing package.
+(subclass of MessageRouter class) name from routing package.
 
 activeTimes 
 Time intervals (comma-separated simulated time value tuples: start1, end1, 
@@ -520,6 +528,9 @@ their routing module. If set to false, node update order is the same as their
 network address order. With randomizing, the order is different on every time 
 step.
 
+Optimization.cellSizeMult
+Adjust the trade-off between memory consumption and simulation speed. 
+Especially useful for large maps. See ConnectivityOptimizer class for details.
 
 
 GUI
@@ -570,6 +581,7 @@ event (using the check boxes in the "pause" column). Log part displays time
 stamped events. All nodes and message names in the log messages are
 buttons and you can get more information about them by clicking the
 buttons.
+
 
 DTN2 Reference Implementation Connectivity
 ==========================================
@@ -644,6 +656,7 @@ Known Issues
 For DTN2 connectivity related issues, you can contact teemuk@netlab.tkk.fi 
 
 -Quitting dtnd router instances connected to ONE will cause ONE to quit.
+
 
 Toolkit
 =======

@@ -7,11 +7,12 @@ package core;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Random;
 
 import movement.MovementModel;
 import movement.Path;
 import routing.MessageRouter;
-import routing.RoutingInfo;
+import routing.util.RoutingInfo;
 
 /**
  * A DTN capable host.
@@ -66,7 +67,6 @@ public class DTNHost implements Comparable<DTNHost> {
 		}	
 
 		// TODO - think about the names of the interfaces and the nodes
-		//this.name = groupId + ((NetworkInterface)net.get(1)).getAddress();
 
 		this.msgListeners = msgLs;
 		this.movListeners = movLs;
@@ -74,6 +74,7 @@ public class DTNHost implements Comparable<DTNHost> {
 		// create instances by replicating the prototypes
 		this.movement = mmProto.replicate();
 		this.movement.setComBus(comBus);
+		this.movement.setHost(this);
 		setRouter(mRouterProto.replicate());
 
 		this.location = movement.getInitialLocation();
@@ -105,11 +106,20 @@ public class DTNHost implements Comparable<DTNHost> {
 	}
 
 	/**
-	 * Returns true if this node is active (false if not)
-	 * @return true if this node is active (false if not)
+	 * Returns true if this node is actively moving (false if not)
+	 * @return true if this node is actively moving (false if not)
 	 */
-	public boolean isActive() {
+	public boolean isMovementActive() {
 		return this.movement.isActive();
+	}
+	
+	/**
+	 * Returns true if this node's radio is active (false if not)
+	 * @return true if this node's radio is active (false if not)
+	 */
+	public boolean isRadioActive() {
+		/* TODO: make this work for multiple interfaces */
+		return this.getInterface(1).isActive();
 	}
 
 	/**
@@ -188,7 +198,6 @@ public class DTNHost implements Comparable<DTNHost> {
 		return this.path;
 	}
 
-
 	/**
 	 * Sets the Node's location overriding any location set by movement model
 	 * @param location The location to set
@@ -251,13 +260,13 @@ public class DTNHost implements Comparable<DTNHost> {
 	/**
 	 * Find the network interface based on the index
 	 */
-	protected NetworkInterface getInterface(int interfaceNo) {
+	public NetworkInterface getInterface(int interfaceNo) {
 		NetworkInterface ni = null;
 		try {
 			ni = net.get(interfaceNo-1);
 		} catch (IndexOutOfBoundsException ex) {
-			System.out.println("No such interface: "+interfaceNo);
-			System.exit(0);
+			throw new SimError("No such interface: "+interfaceNo + 
+					" at " + this);
 		}
 		return ni;
 	}
@@ -318,7 +327,9 @@ public class DTNHost implements Comparable<DTNHost> {
 	 * @param simulateConnections Should network layer be updated too
 	 */
 	public void update(boolean simulateConnections) {
-		if (!isActive()) {
+		if (!isRadioActive()) {
+			// Make sure inactive nodes don't have connections
+			tearDownAllConnections();
 			return;
 		}
 		
@@ -328,6 +339,27 @@ public class DTNHost implements Comparable<DTNHost> {
 			}
 		}
 		this.router.update();
+	}
+	
+	/** 
+	 * Tears down all connections for this host.
+	 */
+	private void tearDownAllConnections() {
+		for (NetworkInterface i : net) {
+			// Get all connections for the interface
+			List<Connection> conns = i.getConnections();
+			if (conns.size() == 0) continue;
+			
+			// Destroy all connections
+			List<NetworkInterface> removeList =
+				new ArrayList<NetworkInterface>(conns.size());
+			for (Connection con : conns) {
+				removeList.add(con.getOtherInterface(i));
+			}
+			for (NetworkInterface inf : removeList) {
+				i.destroyConnection(inf);
+			}
+		}
 	}
 
 	/**
@@ -340,7 +372,7 @@ public class DTNHost implements Comparable<DTNHost> {
 		double distance;
 		double dx, dy;
 
-		if (!isActive() || SimClock.getTime() < this.nextTimeToMove) {
+		if (!isMovementActive() || SimClock.getTime() < this.nextTimeToMove) {
 			return; 
 		}
 		if (this.destination == null) {

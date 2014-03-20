@@ -15,6 +15,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 
+import core.Settings;
 import core.World;
 
 /**
@@ -22,17 +23,33 @@ import core.World;
  * in the window.
  */
 public class MainWindow extends JFrame {
-	private static final String WINDOW_TITLE = "ONE";
-	private static final int WIN_XSIZE = 900;
-	private static final int WIN_YSIZE = 700;
-	// log panel's initial weight in the split panel 
+	/** The namespace for general GUI settings */
+	public static final String GUI_NS = "GUI";
+	
+	/** Main window settings namespace ({@value}) */
+	public static final String GUI_WIN_NS = GUI_NS + ".window";
+	
+	/** Window width -setting id ({@value}). Defines the width of the GUI 
+	 * window. Default {@link #WIN_DEFAULT_WIDTH} */
+	public static final String WIN_WIDTH_S = "width";
+	/** Window height -setting id ({@value}). Defines the height of the GUI 
+	 * window. Default {@link #WIN_DEFAULT_HEIGHT} */
+	public static final String WIN_HEIGHT_S = "height";
+
+	/** Default width for the GUI window */
+	public static final int WIN_DEFAULT_WIDTH = 900;
+	/** Default height for the GUI window */
+	public static final int WIN_DEFAULT_HEIGHT = 700;
+	
+	public static final String WINDOW_TITLE = "ONE";
+	/** log panel's initial weight in the split panel */
 	private static final double SPLIT_PANE_LOG_WEIGHT = 0.2;
 	
 	private JScrollPane playFieldScroll;
 	
     public MainWindow(String scenName, World world, PlayField field,
     		GUIControls guiControls, InfoPanel infoPanel,
-    		EventLogPanel elp, DTNSimGUI gui) {
+    		EventLogPanel elp, DTNSimGUI gui) {    	
     	super(WINDOW_TITLE + " - " + scenName);
     	JFrame.setDefaultLookAndFeelDecorated(true);
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
@@ -43,15 +60,17 @@ public class MainWindow extends JFrame {
         JSplitPane fieldLogSplit;
         JSplitPane logControlSplit;
         JSplitPane mainSplit;
+        Settings s = new Settings(GUI_WIN_NS);
+        NodeChooser chooser = new NodeChooser(world.getHosts(),gui);
         
     	setLayout(new BorderLayout());
-        setJMenuBar(new SimMenuBar(field));
+        setJMenuBar(new SimMenuBar(field, chooser));
         
         playFieldScroll = new JScrollPane(field);
         playFieldScroll.setMaximumSize(new Dimension(Integer.MAX_VALUE, 
         		Integer.MAX_VALUE));
         
-        hostListScroll = new JScrollPane(new NodeChooser(world.getHosts(),gui));
+        hostListScroll = new JScrollPane(chooser);
         hostListScroll.setHorizontalScrollBarPolicy(
         		JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
@@ -65,7 +84,9 @@ public class MainWindow extends JFrame {
         fieldLogSplit.setResizeWeight(1-SPLIT_PANE_LOG_WEIGHT);
         fieldLogSplit.setOneTouchExpandable(true);
         
-        setPreferredSize(new Dimension(WIN_XSIZE, WIN_YSIZE));
+        setPreferredSize(new Dimension(
+        		s.getInt(WIN_WIDTH_S, WIN_DEFAULT_WIDTH), 
+        		s.getInt(WIN_HEIGHT_S, WIN_DEFAULT_HEIGHT)));
 
         leftPane.add(guiControls);
         leftPane.add(playFieldScroll);
@@ -74,7 +95,7 @@ public class MainWindow extends JFrame {
         mainSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, 
         		fieldLogSplit, hostListScroll);
         mainSplit.setOneTouchExpandable(true);
-        mainSplit.setResizeWeight(0.60);        
+        mainSplit.setResizeWeight(0.8);    
         this.getContentPane().add(mainSplit);
         
         pack();

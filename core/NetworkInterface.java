@@ -11,6 +11,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import routing.util.EnergyModel;
+
+import util.ActivenessHandler;
+
 /**
  * Network interface of a DTNHost. Takes care of connectivity among hosts.
  */
@@ -21,6 +25,16 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	public static final String TRANSMIT_SPEED_S = "transmitSpeed";
 	/** scanning interval -setting id ({@value})*/
 	public static final String SCAN_INTERVAL_S = "scanInterval";
+	
+	/** 
+	 * Sub-namespace for the network related settings in the Group namespace
+	 * ({@value}) 
+	 */
+	public static final String NET_SUB_NS = "net";
+	
+	/** Activeness offset jitter -setting id ({@value})
+	 * The maximum amount of random offset for the offset */
+	public static final String ACT_JITTER_S = "activenessOffsetJitter";
 	
 	/** {@link ModuleCommunicationBus} identifier for the "scanning interval" 
     variable. */
@@ -34,7 +48,7 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	
 	private static final int CON_UP = 1;
 	private static final int CON_DOWN = 2;
-	private static int nextAddress = 0;
+
 	private static Random rng;
 	protected DTNHost host = null;
 
@@ -43,12 +57,19 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	private List<ConnectionListener> cListeners = null; // list of listeners
 	private int address; // network interface address
 	protected double transmitRange;
+	protected double oldTransmitRange;
 	protected int transmitSpeed;
 	protected ConnectivityOptimizer optimizer = null;
 	/** scanning interval, or 0.0 if n/a */
 	private double scanInterval;
 	private double lastScanTime;
-
+	
+	/** activeness handler for the node group */
+	private ActivenessHandler ah;
+	/** maximum activeness jitter value for the node group */
+	private int activenessJitterMax;
+	/** this interface's activeness jitter value */
+	private int activenessJitterValue;
 
 	static {
 		DTNSim.registerForReset(NetworkInterface.class.getCanonicalName());
@@ -59,7 +80,6 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 * Resets the static fields of the class
 	 */
 	public static void reset() {
-		nextAddress = 0;
 		rng = new Random(0);
 	}
 	
@@ -69,17 +89,11 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	public NetworkInterface(Settings s) {
 		this.interfacetype = s.getNameSpace();
 		this.connections = new ArrayList<Connection>();
-		this.address = getNextNetAddress();
 
 		this.transmitRange = s.getDouble(TRANSMIT_RANGE_S);
 		this.transmitSpeed = s.getInt(TRANSMIT_SPEED_S);
 		ensurePositiveValue(transmitRange, TRANSMIT_RANGE_S);
 		ensurePositiveValue(transmitSpeed, TRANSMIT_SPEED_S);
-		if (s.contains(SCAN_INTERVAL_S)) {
-			scanInterval =  s.getDouble(SCAN_INTERVAL_S);
-		} else {
-			this.scanInterval = 0;
-		}
 	}
 	
 	/**
@@ -88,7 +102,6 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	public NetworkInterface() {
 		this.interfacetype = "Default";
 		this.connections = new ArrayList<Connection>();
-		this.address = getNextNetAddress();
 	}
 	
 	/**
@@ -96,15 +109,23 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 */
 	public NetworkInterface(NetworkInterface ni) {
 		this.connections = new ArrayList<Connection>();
-		this.address = getNextNetAddress();
 		this.host = ni.host;
 		this.cListeners = ni.cListeners;
 		this.interfacetype = ni.interfacetype;
 		this.transmitRange = ni.transmitRange;
 		this.transmitSpeed = ni.transmitSpeed;
+		this.scanInterval = ni.scanInterval;
+		this.ah = ni.ah;
 		
+		if (ni.activenessJitterMax > 0) {
+			this.activenessJitterValue = rng.nextInt(ni.activenessJitterMax);
+		} else {
+			this.activenessJitterValue = 0;
+		}
+		
+		this.scanInterval = ni.scanInterval;
 		/* draw lastScanTime of [0 -- scanInterval] */
-		this.lastScanTime = rng.nextDouble() * scanInterval;
+		this.lastScanTime = rng.nextDouble() * this.scanInterval;
 	}
 
 	/**
@@ -120,13 +141,45 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	public void setHost(DTNHost host) {
 		this.host = host;
 		ModuleCommunicationBus comBus = host.getComBus();
-		comBus.subscribe(SCAN_INTERVAL_ID, this);
-		comBus.subscribe(RANGE_ID, this);
-		comBus.subscribe(SPEED_ID, this);
 		
-		optimizer = ConnectivityGrid.ConnectivityGridFactory(
-				this.interfacetype.hashCode(), transmitRange);
-		optimizer.addInterface(this);		
+		if (!comBus.containsProperty(SCAN_INTERVAL_ID)) {
+			/* add properties and subscriptions only for the 1st interface */
+			/* TODO: support for multiple interfaces */
+			comBus.addProperty(SCAN_INTERVAL_ID, this.scanInterval);
+			comBus.addProperty(RANGE_ID, this.transmitRange);
+			comBus.addProperty(SPEED_ID, this.transmitSpeed);
+			comBus.subscribe(SCAN_INTERVAL_ID, this);
+			comBus.subscribe(RANGE_ID, this);
+			comBus.subscribe(SPEED_ID, this);
+		}
+		
+		if (transmitRange > 0) {
+			optimizer = ConnectivityGrid.ConnectivityGridFactory(
+					this.interfacetype.hashCode(), transmitRange);
+			optimizer.addInterface(this);
+		} else {
+			optimizer = null;
+		}
+	}
+	
+	/**
+	 * Sets group-based settings for the network interface
+	 * @param s The settings object using the right group namespace
+	 */
+	public void setGroupSettings(Settings s) {
+		s.setSubNameSpace(NET_SUB_NS);	
+		ah = new ActivenessHandler(s);
+		
+		if (s.contains(SCAN_INTERVAL_S)) {
+			this.scanInterval =  s.getDouble(SCAN_INTERVAL_S);
+		} else {
+			this.scanInterval = 0;
+		}
+		if (s.contains(ACT_JITTER_S)) {
+			this.activenessJitterMax = s.getInt(ACT_JITTER_S);
+		}
+		
+		s.restoreSubNameSpace();
 	}
 
 	/**
@@ -142,23 +195,6 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 */
 	public void setClisteners(List<ConnectionListener> cListeners) {
 		this.cListeners = cListeners;
-	}
-
-	/**
-	 * Returns a new network interface address and increments the address for
-	 * subsequent calls.
-	 * @return The next address.
-	 */
-	private synchronized static int getNextNetAddress() {
-		return nextAddress++;	
-	}
-
-	/**
-	 * Returns the network interface address.
-	 * @return The address (integer)
-	 */
-	public int getAddress() {
-		return this.address;
 	}
 
 	/**
@@ -186,11 +222,41 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	}
 	
 	/**
+	 * Returns true if the interface is on at the moment (false if not)
+	 * @return true if the interface is on at the moment (false if not)
+	 */
+	public boolean isActive() {
+		boolean active = ah.isActive(this.activenessJitterValue);
+		
+		if (active && host.getComBus().getDouble(EnergyModel.ENERGY_VALUE_ID,
+					1) <= 0) {
+			/* TODO: better way to check battery level */
+			/* no battery -> inactive */
+			active = false;
+		}
+		
+		if (active == false && this.transmitRange > 0) {
+			/* not active -> make range 0 */
+			this.oldTransmitRange = this.transmitRange;
+			host.getComBus().updateProperty(RANGE_ID, 0.0);
+		} else if (active == true && this.transmitRange == 0.0) {
+			/* active, but range == 0 -> restore range  */
+			host.getComBus().updateProperty(RANGE_ID, 
+					this.oldTransmitRange);
+		}		
+		return active;
+	}
+	
+	/**
 	 * Checks if this interface is currently in the scanning mode
 	 * @return True if the interface is scanning; false if not
 	 */
 	public boolean isScanning() {
 		double simTime = SimClock.getTime();
+		
+		if (!isActive()) {
+			return false;
+		}
 		
 		if (scanInterval > 0.0) {
 			if (simTime < lastScanTime) {
@@ -204,8 +270,23 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 				return false; /* not in the scan round */
 			}
 		}
-		/* interval == 0 or still in the last scan round */
+		/* interval == 0 or still in the same scan round as when 
+		   last time asked */
 		return true;
+	}
+	
+	/**
+	 * Returns true if one of the connections of this interface is transferring
+	 * data
+	 * @return true if the interface transferring
+	 */
+	public boolean isTransferring() {
+		for (Connection c : this.connections) {
+			if (c.isTransferring()) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -226,7 +307,6 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	 * @param anotherInterface The interface to connect to
 	 */
 	protected void connect(Connection con, NetworkInterface anotherInterface) {
-
 		this.connections.add(con);
 		notifyConnectionListeners(CON_UP, anotherInterface.getHost());
 

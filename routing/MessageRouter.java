@@ -12,6 +12,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
+import routing.util.RoutingInfo;
+
+import util.Tuple;
+
 import core.Application;
 import core.Connection;
 import core.DTNHost;
@@ -21,7 +25,6 @@ import core.Settings;
 import core.SettingsError;
 import core.SimClock;
 import core.SimError;
-import core.Tuple;
 
 /**
  * Superclass for message routers.
@@ -52,6 +55,14 @@ public abstract class MessageRouter {
 	/** Setting value for FIFO queue mode */
 	public static final int Q_MODE_FIFO = 2;
 	
+	/* Return values when asking to start a transmission:
+	 * RCV_OK (0) means that the host accepts the message and transfer started, 
+	 * values < 0 mean that the  receiving host will not accept this 
+	 * particular message (right now), 
+	 * values > 0 mean the host will not right now accept any message. 
+	 * Values in the range [-100, 100] are reserved for general return values
+	 * (and specified here), values beyond that are free for use in 
+	 * implementation specific cases */
 	/** Receive return value for OK */
 	public static final int RCV_OK = 0;
 	/** Receive return value for busy receiver */
@@ -62,8 +73,12 @@ public abstract class MessageRouter {
 	public static final int DENIED_NO_SPACE = -2;
 	/** Receive return value for messages whose TTL has expired */
 	public static final int DENIED_TTL = -3;
+	/** Receive return value for a node low on some resource(s) */
+	public static final int DENIED_LOW_RESOURCES = -4;
+	/** Receive return value for a node low on some resource(s) */
+	public static final int DENIED_POLICY = -5;
 	/** Receive return value for unspecified reason */
-	public static final int DENIED_UNSPECIFIED = -999;
+	public static final int DENIED_UNSPECIFIED = -99;
 	
 	private List<MessageListener> mListeners;
 	/** The messages being transferred with msgID_hostName keys */
@@ -72,6 +87,8 @@ public abstract class MessageRouter {
 	private HashMap<String, Message> messages; 
 	/** The messages this router has received as the final recipient */
 	private HashMap<String, Message> deliveredMessages;
+	/** The messages that Applications on this router have blacklisted */
+	private HashMap<String, Object> blacklistedMessages;
 	/** Host where this router belongs to */
 	private DTNHost host;
 	/** size of the buffer */
@@ -82,7 +99,7 @@ public abstract class MessageRouter {
 	private int sendQueueMode;
 
 	/** applications attached to the host */
-	private HashMap<String, Collection<Application>>	applications = null;
+	private HashMap<String, Collection<Application>> applications = null;
 	
 	/**
 	 * Constructor. Creates a new message router based on the settings in
@@ -125,6 +142,7 @@ public abstract class MessageRouter {
 		this.incomingMessages = new HashMap<String, Message>();
 		this.messages = new HashMap<String, Message>();
 		this.deliveredMessages = new HashMap<String, Message>();
+		this.blacklistedMessages = new HashMap<String, Object>();
 		this.mListeners = mListeners;
 		this.host = host;
 	}
@@ -179,7 +197,7 @@ public abstract class MessageRouter {
 	 * @param id Identifier of the message
 	 * @return True if the router has message with this id, false if not
 	 */
-	protected boolean hasMessage(String id) {
+	public boolean hasMessage(String id) {
 		return this.messages.containsKey(id);
 	}
 	
@@ -193,6 +211,19 @@ public abstract class MessageRouter {
 	 */
 	protected boolean isDeliveredMessage(Message m) {
 		return (this.deliveredMessages.containsKey(m.getId()));
+	}
+	
+	/** 
+	 * Returns <code>true</code> if the message has been blacklisted. Messages
+	 * get blacklisted when an application running on the node wants to drop it.
+	 * This ensures the peer doesn't try to constantly send the same message to
+	 * this node, just to get dropped by an application every time.
+	 * 
+	 * @param id	id of the message
+	 * @return <code>true</code> if blacklisted, <code>false</code> otherwise.
+	 */
+	protected boolean isBlacklistedMessage(String id) {
+		return this.blacklistedMessages.containsKey(id);
 	}
 	
 	/**
@@ -339,9 +370,12 @@ public abstract class MessageRouter {
 			// not the final recipient and app doesn't want to drop the message
 			// -> put to buffer
 			addToMessages(aMessage, false);
-		}
-		else if (isFirstDelivery) {
+		} else if (isFirstDelivery) {
 			this.deliveredMessages.put(id, aMessage);
+		} else if (outgoing == null) {
+			// Blacklist messages that an app wants to drop.
+			// Otherwise the peer will just try to send it back again.
+			this.blacklistedMessages.put(id, null);
 		}
 		
 		for (MessageListener ml : this.mListeners) {

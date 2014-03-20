@@ -105,13 +105,4 @@ public class VBRConnection extends Connection {
 		}
 	}
 	
-	/**
-	 * Returns a String presentation of the connection.
-	 */
-	public String toString() {
-		return fromNode + "<->" + toNode + " (" + currentspeed + "Bps) is " +
-			(isUp() ? "up":"down") + 
-			(this.msgOnFly != null ? " transferring " + this.msgOnFly  + 
-			" from " + this.msgFromNode  : "");
-	}
 }

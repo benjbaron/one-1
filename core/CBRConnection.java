@@ -44,9 +44,9 @@ public class CBRConnection extends Connection {
 	 */
 	public int startTransfer(DTNHost from, Message m) {
 		assert this.msgOnFly == null : "Already transferring " + 
-		this.msgOnFly + " from " + this.msgFromNode + " to " + 
-		this.getOtherNode(this.msgFromNode) + ". Can't "+ 
-		"start transfer of " + m + " from " + from;
+			this.msgOnFly + " from " + this.msgFromNode + " to " + 
+			this.getOtherNode(this.msgFromNode) + ". Can't " + 
+			"start transfer of " + m + " from " + from;
 
 		this.msgFromNode = from;
 		Message newMessage = m.replicate();
@@ -117,11 +117,8 @@ public class CBRConnection extends Connection {
 	 * Returns a String presentation of the connection.
 	 */
 	public String toString() {
-		return fromNode + "<->" + toNode + " (" + speed + "Bps) is " +
-		(isUp() ? "up":"down") + 
-		(this.msgOnFly != null ? " transferring " + this.msgOnFly  + 
-				" from " + this.msgFromNode + " until " + 
-				this.transferDoneTime : "");
+		return super.toString() + (isTransferring() ?  
+				" until " + String.format("%.2f", this.transferDoneTime) : "");
 	}
 
 }

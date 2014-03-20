@@ -7,7 +7,6 @@ package interfaces;
 import java.util.Collection;
 
 import core.Connection;
-import core.DTNHost;
 import core.NetworkInterface;
 import core.Settings;
 import core.VBRConnection;
@@ -61,7 +60,7 @@ public class InterferenceLimitedInterface extends NetworkInterface {
 	 */
 	public void connect(NetworkInterface anotherInterface) {
 		if (isScanning() 
-				&& anotherInterface.getHost().isActive()
+				&& anotherInterface.getHost().isRadioActive()
 				&& isWithinRange(anotherInterface)
 				&& !isConnected(anotherInterface) 
 				&& (this != anotherInterface)) {
@@ -78,6 +77,10 @@ public class InterferenceLimitedInterface extends NetworkInterface {
 	 * that are out of range).
 	 */
 	public void update() {
+		if (optimizer == null) {
+			return; /* nothing to do */
+		}
+		
 		// First break the old ones
 		optimizer.updateLocation(this);
 		for (int i=0; i<this.connections.size(); ) {

@@ -1,5 +1,55 @@
 HISTORY
 
+Version 1.5.1 (Nov 2013)
+  - Support for Floating Content: new router module, applications, 
+    and reports; see README-FloatingContent.txt for details.
+  - Random Direction and Modified Random Direction movement models
+
+Version 1.5.0 (23 Dec 2011)
+  - New movement models
+    - GridLocation for static grid formations
+    - LinearMovement for nodes moving on a line
+    - Path-based external movement model and reader (ExternalPathMovement)
+  - New router modules
+    - WaveRouter for forwarding messages in waves
+    - LifeRouter for "Conway's game of life"-kind of routing
+    - ProphetV2Router with updated PRoPHET algorithm (by Samo Grasic)
+  - New Report modules: MessageCopyCountReport & MessageAvailabilityReport
+    (and analyzing/plotting scripts for them)
+  - Generic energy awareness feature for all routing modules
+  - Message Transfer Accept Policy for defining which messages and from who
+    the nodes should accept for transfers (with any routing module)
+  - Configuration settings improvements
+    - Ability to define ranges as setting values
+    - Ability to define arithmetic expressions as setting values
+    - Default-getters for various settings types
+    - Optimization option to simulate connections only once (see World class)  
+    - Sub-namespace support
+      - Group-specific network interface related settings (e.g., activePeriods
+        and scanInterval) are now in "net" sub-namespace
+  - GUI fixes & updates
+    - Offset to playfield view and dynamic scaling of distance reference bar
+    - Option to disable (by default) the node name string
+    - Autorefresh-feature and keeping the expanded-state to routing info window
+    - Showing of radio coverages, connections and message count is configurable
+   - New GUI features
+    - Focus nodes by clicking on the playfield (see "Playfield options" menu)
+    - GUI node filters feature and one message based filter (see "Tools" menu)    
+  - Bugfixes
+    - Scan intervals work also without MessageCommunicationBus; 
+      thanks to Matthew Orlinski
+    - Connections are properly cleared when ActivenessHandler is used
+    - MaxProp doesn't send messages to hosts that have already received the
+      message even if they have then deleted it
+    - Fix to scanning intervals (works with only the 1st interface though)
+    - Fixed cellSizeMultiplier in ConnectivityGrid class
+    - Message blacklisting for messages that have been rejected by application
+    - Typo fix to initialEnergy setting (need to update config files using this)
+  - Refactoring (may break some third party code)
+    - Moved utility classes to util and routing.util packages
+    - Renamed getOldestMessage method to getNextMessageToRemove in ActiveRouter
+
+    
 Version 1.4.1 (31 Jan 2011)
   - Bugfixes
     - External connectivity traces now properly clear connections; thanks to CS

@@ -13,10 +13,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
+import util.Tuple;
+
 import core.Coord;
 import core.Settings;
 import core.SettingsError;
-import core.Tuple;
 
 /**
  * Handler for points of interest data.

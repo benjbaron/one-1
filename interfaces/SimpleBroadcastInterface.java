@@ -8,7 +8,6 @@ import java.util.Collection;
 
 import core.CBRConnection;
 import core.Connection;
-import core.DTNHost;
 import core.NetworkInterface;
 import core.Settings;
 
@@ -17,9 +16,9 @@ import core.Settings;
  * one transmission can be on at a time.
  */
 public class SimpleBroadcastInterface extends NetworkInterface {
+	
 	/**
 	 * Reads the interface settings from the Settings file
-	 *  
 	 */
 	public SimpleBroadcastInterface(Settings s)	{
 		super(s);
@@ -44,7 +43,7 @@ public class SimpleBroadcastInterface extends NetworkInterface {
 	 */
 	public void connect(NetworkInterface anotherInterface) {
 		if (isScanning()  
-				&& anotherInterface.getHost().isActive() 
+				&& anotherInterface.getHost().isRadioActive() 
 				&& isWithinRange(anotherInterface) 
 				&& !isConnected(anotherInterface)
 				&& (this != anotherInterface)) {
@@ -62,10 +61,14 @@ public class SimpleBroadcastInterface extends NetworkInterface {
 	}
 
 	/**
-	 * Updates the state of current connections (ie tears down connections
-	 * that are out of range).
+	 * Updates the state of current connections (i.e. tears down connections
+	 * that are out of range and creates new ones).
 	 */
 	public void update() {
+		if (optimizer == null) {
+			return; /* nothing to do */
+		}
+		
 		// First break the old ones
 		optimizer.updateLocation(this);
 		for (int i=0; i<this.connections.size(); ) {

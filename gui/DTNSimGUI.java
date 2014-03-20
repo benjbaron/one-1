@@ -26,7 +26,6 @@ import core.SimClock;
 
 /**
  * Graphical User Interface for simulator
- *
  */
 public class DTNSimGUI extends DTNSimUI {
 	private MainWindow main;
@@ -59,7 +58,7 @@ public class DTNSimGUI extends DTNSimUI {
 	 * Initializes the GUI
 	 */
 	private void initGUI() {	
-		this.field = new PlayField(world);
+		this.field = new PlayField(world, this);
 		
 		this.field.addMouseListener(new PlayfieldMouseHandler());
 		this.field.addMouseWheelListener(new PlayfieldMouseHandler());

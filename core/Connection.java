@@ -48,6 +48,15 @@ public abstract class Connection {
 		return this.isUp;
 	}
 
+	/** 
+	 * Returns true if the connections is transferring a message
+	 * @return true if the connections is transferring a message
+	 */
+	public boolean isTransferring() {
+		return this.msgOnFly != null;
+	}
+
+	
 	/**
 	 * Returns true if the given node is the initiator of the connection, false
 	 * otherwise
@@ -57,7 +66,7 @@ public abstract class Connection {
 	public boolean isInitiator(DTNHost node) {
 		return node == this.fromNode;
 	}
-
+	
 	/**
 	 * Sets the state of the connection.
 	 * @param state True if the connection is up, false if not
@@ -211,9 +220,9 @@ public abstract class Connection {
 	 * Returns a String presentation of the connection.
 	 */
 	public String toString() {
-		return fromNode + "<->" + toNode + " (" + getSpeed() + "Bps) is " +
+		return fromNode + "<->" + toNode + " (" + getSpeed()/1000 + " kBps) is " +
 		(isUp() ? "up":"down") + 
-		(this.msgOnFly != null ? " transferring " + this.msgOnFly  + 
+		(isTransferring() ? " transferring " + this.msgOnFly  + 
 				" from " + this.msgFromNode : "");
 	}
 

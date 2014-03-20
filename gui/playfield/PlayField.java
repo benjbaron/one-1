@@ -4,10 +4,14 @@
  */
 package gui.playfield;
 
+import gui.DTNSimGUI;
+
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
@@ -27,7 +31,11 @@ import core.World;
  *
  */
 public class PlayField extends JPanel {
+	public static final int PLAYFIELD_OFFSET = 10;
+
 	private World w;
+	private DTNSimGUI gui;
+	
 	private Color bgColor = Color.WHITE;
 	
 	private List<PlayFieldGraphic> overlayGraphics;
@@ -35,6 +43,7 @@ public class PlayField extends JPanel {
 	private MapGraphic mapGraphic;
 	private boolean showMapGraphic;
 	private ScaleReferenceGraphic refGraphic;
+	private boolean focusOnClick;
 	
 	private BufferedImage underlayImage;
 	private AffineTransform imageTransform;
@@ -46,8 +55,10 @@ public class PlayField extends JPanel {
 	 * Creates a playfield
 	 * @param w The world that contains the actors to be drawn
 	 */
-	public PlayField (World w) {
+	public PlayField (World w, DTNSimGUI gui) {
 		this.w = w;
+		this.gui = gui;
+		
 		this.refGraphic = new ScaleReferenceGraphic();
 		updateFieldSize();
         this.setBackground(bgColor);
@@ -57,6 +68,15 @@ public class PlayField extends JPanel {
         this.underlayImage = null;
         this.imageTransform = null;
         this.autoClearOverlay = true;
+        
+        this.addMouseListener(new MouseAdapter() {        	
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				if (focusOnClick) {
+					focusClosestNode(e.getX(), e.getY());
+				}
+			}
+		});
 	}
 	
 	/**
@@ -137,6 +157,16 @@ public class PlayField extends JPanel {
 	}
 	
 	/**
+	 * Enables or disables the automatic clearing of overlay graphics.
+	 * If enabled, overlay graphics are cleared every time a new graphics
+	 * object is set to be drawn.
+	 * @param clear Auto clear is enabled if this is true, disabled on false
+	 */
+	public void setFocusOnClick(boolean focus) {
+		this.focusOnClick = focus;
+	}
+	
+	/**
 	 * Draws the play field. To be called by Swing framework or directly if
 	 * different context than screen is desired
 	 * @param g The graphics context to draw the field to
@@ -145,8 +175,12 @@ public class PlayField extends JPanel {
 		Graphics2D g2 = (Graphics2D)g;
 		g2.setBackground(bgColor);
 		
+		g2.translate(PLAYFIELD_OFFSET, PLAYFIELD_OFFSET);
+		
 		// clear old playfield graphics
-		g2.clearRect(0, 0, this.getWidth(), this.getHeight());
+		g2.clearRect(-PLAYFIELD_OFFSET, -PLAYFIELD_OFFSET, 
+				this.getWidth() + PLAYFIELD_OFFSET, 
+				this.getHeight() + PLAYFIELD_OFFSET);
 		if (underlayImage != null) {
 			g2.drawImage(underlayImage,curTransform, null);
 		}
@@ -158,7 +192,7 @@ public class PlayField extends JPanel {
 		
 		// draw hosts
 		for (DTNHost h : w.getHosts()) {
-			new NodeGraphic(h).draw(g2); // TODO: Optimization..?
+			new NodeGraphic(h).draw(g2); 
 		}
 		
 		// draw overlay graphics
@@ -217,8 +251,8 @@ public class PlayField extends JPanel {
 	 */
 	public Coord getGraphicsPosition(Coord loc) {
 		Coord c = loc.clone();
-		c.setLocation(PlayFieldGraphic.scale(c.getX()), 
-				PlayFieldGraphic.scale(c.getY()));
+		c.setLocation(PlayFieldGraphic.scale(c.getX()) + PLAYFIELD_OFFSET, 
+				PlayFieldGraphic.scale(c.getY()) + PLAYFIELD_OFFSET);
 		return c;
 	}
 	
@@ -231,8 +265,8 @@ public class PlayField extends JPanel {
 	 */
 	public Coord getWorldPosition(Coord loc) {
 		Coord c = loc.clone();
-		c.setLocation(PlayFieldGraphic.invScale(c.getX()),
-				PlayFieldGraphic.invScale(c.getY()));
+		c.setLocation(PlayFieldGraphic.invScale(c.getX() - PLAYFIELD_OFFSET),
+				PlayFieldGraphic.invScale(c.getY() - PLAYFIELD_OFFSET));
 		return c;		
 	}
 	
@@ -249,4 +283,28 @@ public class PlayField extends JPanel {
         this.setSize(minSize);
 	}
 	
+	/**
+	 * Sets the focus on the node that is closest to the given coordinates
+	 * (in the graphic view of the playfield)
+	 * @param x The X coordinate
+	 * @param y The Y coordinate
+	 */
+	private void focusClosestNode(int x, int y) {
+		DTNHost closest = w.getHosts().get(0);
+		double closestDist = Double.MAX_VALUE;
+		double dist;
+		
+		Coord clickLoc = getWorldPosition(new Coord(x,y));
+		
+		for (DTNHost h : w.getHosts()) {
+			dist = h.getLocation().distance(clickLoc);
+			
+			if (dist < closestDist) {
+				closest = h;
+				closestDist = dist;
+			}
+		}
+		
+		gui.setFocus(closest);		
+	}
 }

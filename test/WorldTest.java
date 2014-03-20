@@ -17,6 +17,7 @@ import core.SimClock;
 import core.UpdateListener;
 import core.World;
 
+
 /**
  * Tests for the World class
  * TODO: much more tests
@@ -35,18 +36,20 @@ public class WorldTest extends TestCase {
 	protected void setUp() throws Exception {
 		super.setUp();
 		SimClock.reset();
+		TestSettings testSettings = new TestSettings();
+		testSettings.setNameSpace(TestUtils.IFACE_NS);
+		testSettings.putSetting(NetworkInterface.TRANSMIT_RANGE_S, "1.0");
+		testSettings.putSetting(NetworkInterface.TRANSMIT_SPEED_S, "1");
 				
 		this.eQueues = new ArrayList<EventQueue>();
 		this.testHosts = new ArrayList<TestDTNHost>();
 		for (int i=0; i<10; i++) {
-			NetworkInterface ni = new TestInterface(1.0,1);
+			NetworkInterface ni = new TestInterface(testSettings);
 			List<NetworkInterface> li = new ArrayList<NetworkInterface>();
 			li.add(ni);
 			ModuleCommunicationBus comBus = new ModuleCommunicationBus();
-			comBus.addProperty(NetworkInterface.RANGE_ID, 1.0);
-			comBus.addProperty(NetworkInterface.SPEED_ID, 1);
-
-			this.testHosts.add(new TestDTNHost(li, comBus));
+			
+			this.testHosts.add(new TestDTNHost(li, comBus, testSettings));
 		}
 		
 		TestScenario ts = new TestScenario();

@@ -82,10 +82,10 @@ public class EnergyLevelReport extends Report implements UpdateListener {
 				continue; /* node not in the list */
 			}
 			Double value = (Double)h.getComBus().
-				getProperty(routing.EnergyAwareRouter.ENERGY_VALUE_ID);
+				getProperty(routing.util.EnergyModel.ENERGY_VALUE_ID);
 			if (value == null) {
 				throw new SimError("Host " + h + 
-						" is not using an energy aware router");
+						" is not using energy model");
 			}
 			
 			write(h.toString() + " " +  format(value));

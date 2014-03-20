@@ -5,6 +5,7 @@
 package routing;
 
 import core.Connection;
+import core.DTNHost;
 import core.Message;
 import core.Settings;
 
@@ -32,8 +33,8 @@ public class FirstContactRouter extends ActiveRouter {
 	}
 	
 	@Override
-	protected int checkReceiving(Message m) {
-		int recvCheck = super.checkReceiving(m); 
+	protected int checkReceiving(Message m, DTNHost from) {
+		int recvCheck = super.checkReceiving(m, from); 
 		
 		if (recvCheck == RCV_OK) {
 			/* don't accept a message that has already traversed this node */

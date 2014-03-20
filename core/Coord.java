@@ -62,7 +62,31 @@ public class Coord implements Cloneable, Comparable<Coord> {
 		
 		return Math.sqrt(dx*dx + dy*dy);
 	}
-	
+
+	/**
+	 * Returns the square of the distance to another coordinate
+	 * @param other The other coordinate
+	 * @return The square distance between this and another coordinate
+	 */
+	public double distance2(Coord other) {
+		double dx = this.x - other.x;
+		double dy = this.y - other.y;
+		
+		return (dx*dx + dy*dy);
+	}
+
+	/**
+	 * Returns the angle (in radians) from this coord to the given coord
+	 * @param other The other coordinate
+	 * @return The angle from this coord to the other coord
+	 */
+	public double angle(Coord other) {
+		double dx = this.x - other.x;
+		double dy = this.y - other.y;
+		
+		return Math.atan2(dy, dx);
+	}
+
 	/**
 	 * Returns the x coordinate
 	 * @return x coordinate

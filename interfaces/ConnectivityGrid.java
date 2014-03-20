@@ -14,6 +14,8 @@ import core.Coord;
 import core.DTNSim;
 import core.NetworkInterface;
 import core.Settings;
+import core.SettingsError;
+import core.World;
 
 /**
  * <P>
@@ -38,14 +40,29 @@ import core.Settings;
  * from zero to conserve memory. 
  */
 public class ConnectivityGrid extends ConnectivityOptimizer {
+
+	/**
+	 * Cell based optimization cell size multiplier -setting id ({@value}).
+	 * Used in {@link World#OPTIMIZATION_SETTINGS_NS} name space.
+	 * Single ConnectivityCell's size is the biggest radio range times this.
+	 * Larger values save memory and decrease startup time but may result in
+	 * slower simulation.
+	 * Default value is {@link #DEF_CON_CELL_SIZE_MULT}.
+	 * Smallest accepted value is 1.
+	 */
+	public static final String CELL_SIZE_MULT_S = "cellSizeMult";
+	/** default value for cell size multiplier ({@value}) */
+	public static final int DEF_CON_CELL_SIZE_MULT = 5;
+	
 	private GridCell[][] cells;
-	private HashMap<NetworkInterface,GridCell> ginterfaces;
+	private HashMap<NetworkInterface, GridCell> ginterfaces;
 	private int cellSize;
 	private int rows;
 	private int cols;
 	private static int worldSizeX;
 	private static int worldSizeY;
-
+	private static int cellSizeMultiplier;
+	
 	static HashMap<Integer,ConnectivityGrid> gridobjects;
 
 	static {
@@ -54,17 +71,29 @@ public class ConnectivityGrid extends ConnectivityOptimizer {
 	}
 	
 	public static void reset() {
-		gridobjects = new HashMap<Integer,ConnectivityGrid>();
+		gridobjects = new HashMap<Integer, ConnectivityGrid>();
 
 		Settings s = new Settings(MovementModel.MOVEMENT_MODEL_NS);
 		int [] worldSize = s.getCsvInts(MovementModel.WORLD_SIZE,2);
 		worldSizeX = worldSize[0];
 		worldSizeY = worldSize[1];
+		
+		s.setNameSpace(World.OPTIMIZATION_SETTINGS_NS);		
+		if (s.contains(CELL_SIZE_MULT_S)) {
+			cellSizeMultiplier = s.getInt(CELL_SIZE_MULT_S);
+		}
+		else {
+			cellSizeMultiplier = DEF_CON_CELL_SIZE_MULT;
+		}
+		if (cellSizeMultiplier < 1) {
+			throw new SettingsError("Too small value (" + cellSizeMultiplier +
+					") for " + World.OPTIMIZATION_SETTINGS_NS + 
+					"." + CELL_SIZE_MULT_S);
+		}
 	}
 
 	/**
 	 * Creates a new overlay connectivity grid
-	 *
 	 * @param cellSize Cell's edge's length (must be larger than the largest
 	 * 	radio coverage's diameter)
 	 */
@@ -86,17 +115,18 @@ public class ConnectivityGrid extends ConnectivityOptimizer {
 	/**
 	 * Returns a connectivity grid object based on a hash value
 	 * @param key A hash value that separates different interfaces from each other
-	 * @param cellSize  Cell's edge's length (must be larger than the largest
-	 * 	radio coverage's diameter)
+	 * @param maxRange Maximum range used by the radio technology using this 
+	 *  connectivity grid. 
 	 * @return The connectivity grid object for a specific interface
 	 */
 	public static ConnectivityGrid ConnectivityGridFactory(int key, 
-			double cellSize) {
+			double maxRange) {
 		if (gridobjects.containsKey((Integer)key)) {
 			return (ConnectivityGrid)gridobjects.get((Integer)key);
 		} else {
 			ConnectivityGrid newgrid = 
-				new ConnectivityGrid((int)Math.ceil(cellSize));
+				new ConnectivityGrid((int)Math.ceil(maxRange * 
+						cellSizeMultiplier));
 			gridobjects.put((Integer)key,newgrid);
 			return newgrid;
 		}
@@ -199,23 +229,25 @@ public class ConnectivityGrid extends ConnectivityOptimizer {
 	}
 
 	/**
-	 * Returns all interfaces using the same technology and channel that are in
-	 * neighboring cells
+	 * Returns all interfaces that are "near" (i.e., in neighboring grid cells) 
+	 * and use the same technology and channel as the given interface 
+	 * @param ni The interface whose neighboring interfaces are returned
+	 * @return List of near interfaces
 	 */
 	public Collection<NetworkInterface> getNearInterfaces(
-			NetworkInterface netinterf) {
-		ArrayList<NetworkInterface> ni = new ArrayList<NetworkInterface>();
-		ni.clear();
-
-		GridCell loc = (GridCell)ginterfaces.get(netinterf);
+			NetworkInterface ni) {
+		ArrayList<NetworkInterface> niList = new ArrayList<NetworkInterface>();
+		GridCell loc = (GridCell)ginterfaces.get(ni);
+		
 		if (loc != null) {	
 			GridCell[] neighbors = 
-				getNeighborCellsByCoord(netinterf.getLocation());
+				getNeighborCellsByCoord(ni.getLocation());
 			for (int i=0; i < neighbors.length; i++) {
-				ni.addAll(neighbors[i].getInterfaces());
+				niList.addAll(neighbors[i].getInterfaces());
 			}
 		}
-		return ni;
+		
+		return niList;
 	}
 
 

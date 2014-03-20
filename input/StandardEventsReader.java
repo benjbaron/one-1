@@ -4,8 +4,11 @@
  */
 package input;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -61,11 +64,13 @@ public class StandardEventsReader implements ExternalEventsReader {
 	/** Message identifier to use to refer to all messages ({@value}) */ 
 	public static final String ALL_MESSAGES_ID = "*";
 	
-	private Scanner scanner;
+	//private Scanner scanner;
+	private BufferedReader reader;
 	
 	public StandardEventsReader(File eventsFile){
 		try {
-			this.scanner = new Scanner(eventsFile);
+			//this.scanner = new Scanner(eventsFile);
+			this.reader = new BufferedReader(new FileReader(eventsFile));
 		} catch (FileNotFoundException e) {
 			throw new SimError(e.getMessage(),e);
 		}
@@ -77,12 +82,23 @@ public class StandardEventsReader implements ExternalEventsReader {
 		int eventsRead = 0;
 		// skip empty and comment lines
 		Pattern skipPattern = Pattern.compile("(#.*)|(^\\s*$)");
-
-		while (eventsRead < nrof && scanner.hasNextLine()) {
-			String line = scanner.nextLine();
+		
+		String line;
+		try {
+			line = this.reader.readLine();
+		} catch (IOException e1) {
+			throw new SimError("Reading from external event file failed.");
+		}
+		while (eventsRead < nrof && line != null) {
 			Scanner lineScan = new Scanner(line);
 			if (skipPattern.matcher(line).matches()) {
 				// skip empty and comment lines
+				try {
+					line = this.reader.readLine();
+				} catch (IOException e) {
+					throw new SimError("Reading from external event file " +
+							"failed.");
+				}
 				continue;
 			}
 			
@@ -174,6 +190,7 @@ public class StandardEventsReader implements ExternalEventsReader {
 				if (lineScan.hasNextLine()) {
 					lineScan.nextLine(); // TODO: test
 				}
+				line = this.reader.readLine();
 				eventsRead++;
 			} catch (Exception e) {
 				throw new SimError("Can't parse external event " + 
@@ -208,7 +225,9 @@ public class StandardEventsReader implements ExternalEventsReader {
 	}
 	
 	public void close() {
-		this.scanner.close();
+		try {
+			this.reader.close();
+		} catch (IOException e) {}
 	}
 
 }

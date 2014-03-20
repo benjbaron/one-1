@@ -14,6 +14,12 @@ import java.util.Set;
  * A message that is created at a node or passed between nodes.
  */
 public class Message implements Comparable<Message> {
+	/** Time-to-live (TTL) as seconds -setting id ({@value}). Boolean valued.
+	 * If set to true, the TTL is interpreted as seconds instead of minutes. 
+	 * Default=false. */
+	public static final String TTL_SECONDS_S = "Scenario.ttlSeconds";
+	private static boolean ttlAsSeconds = false;
+	
 	/** Value for infinite TTL of message */
 	public static final int INFINITE_TTL = -1;
 	private DTNHost from;
@@ -148,21 +154,26 @@ public class Message implements Comparable<Message> {
 	}
 	
 	/** 
-	 * Returns the time to live (minutes) of the message or Integer.MAX_VALUE 
+	 * Returns the time to live (in minutes or seconds, depending on the setting
+	 * {@link #TTL_SECONDS_S}) of the message or Integer.MAX_VALUE 
 	 * if the TTL is infinite. Returned value can be negative if the TTL has
 	 * passed already.
-	 * @return The TTL (minutes)
+	 * @return The TTL
 	 */
 	public int getTtl() {
 		if (this.initTtl == INFINITE_TTL) {
 			return Integer.MAX_VALUE;
 		}
 		else {
-			return (int)( ((this.initTtl * 60) -
-					(SimClock.getTime()-this.timeCreated)) /60.0 );
+			if (ttlAsSeconds) {
+				return (int)(this.initTtl -
+						(SimClock.getTime()-this.timeCreated) );				
+			} else {
+				return (int)( ((this.initTtl * 60) -
+						(SimClock.getTime()-this.timeCreated)) /60.0 );
+			}
 		}
 	}
-	
 	
 	/**
 	 * Sets the initial TTL (time-to-live) for this message. The initial
@@ -344,6 +355,8 @@ public class Message implements Comparable<Message> {
 	 */
 	public static void reset() {
 		nextUniqueId = 0;
+		Settings s = new Settings();
+		ttlAsSeconds = s.getBoolean(TTL_SECONDS_S, false);
 	}
 
 	/**

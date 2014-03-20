@@ -8,12 +8,12 @@ import core.CBRConnection;
 import core.Connection;
 import core.DTNHost;
 import core.NetworkInterface;
+import core.Settings;
 
 public class TestInterface extends NetworkInterface {
 	
-	public TestInterface(double range, int speed) {
-		transmitRange = range;
-		transmitSpeed = speed;
+	public TestInterface(Settings s) {
+		super(s);
 	}
 	
 	public TestInterface(TestInterface ti) {

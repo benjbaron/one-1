@@ -72,12 +72,10 @@ public class MapRoute {
 	}
 	
 	/**
-	 * Returns the next stop on the route (depending on the route mode)
+	 * Returns the next stop on the route (depenging on the route mode)
 	 * @return the next stop on the route
 	 */
-	public MapNode nextStop() {
-		MapNode next = stops.get(index);
-		
+	public MapNode nextStop() {	
 		if (comingBack) {
 			index--; // ping-pong coming back
 		}
@@ -100,7 +98,8 @@ public class MapRoute {
 			}
 		}
 		
-		return next;		
+		return stops.get(index);
+		
 	}
 	
 	/**

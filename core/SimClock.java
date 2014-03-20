@@ -4,7 +4,6 @@
  */
 package core;
 
-
 /**
  * Wall clock for checking the simulation time.
  */
@@ -44,6 +43,16 @@ public class SimClock {
 	 */
 	public static int getIntTime() {
 		return (int)Math.round(clockTime);
+	}
+	
+	/**
+	 * Returns a string presentation of the sim time shown with the given amount
+	 * of decimals
+	 * @param decimals The number of decimals to show
+	 * @return The sim time
+	 */
+	public static String getFormattedTime(int decimals) {
+		return String.format("%." + decimals + "f", clockTime);
 	}
 	
 	/**

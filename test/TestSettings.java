@@ -52,6 +52,13 @@ public class TestSettings extends core.Settings {
 	 * @param value
 	 */
 	public void putSetting(String key, String value) {
+		String nameSpace = getNameSpace();
+		if (nameSpace == null) {
+			nameSpace = "";
+		} else {
+			nameSpace += ".";
+		}
+		
 		if (props == null) {
 			try {
 				init(null);
@@ -60,7 +67,8 @@ public class TestSettings extends core.Settings {
 				System.exit(-1);
 			}
 		}
-		props.put(key, value);
+		
+		props.put(nameSpace + key, value);
 	}	
 
 }

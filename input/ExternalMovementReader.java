@@ -10,9 +10,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
+import util.Tuple;
+
 import core.Coord;
 import core.SettingsError;
-import core.Tuple;
 
 
 /**

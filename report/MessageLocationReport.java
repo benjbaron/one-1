@@ -24,7 +24,7 @@ public class MessageLocationReport extends Report implements UpdateListener {
 	public static final String GRANULARITY = "granularity";
 	/** Reported messages -setting id ({@value}). 
 	 * Defines the IDs of the messages that are reported 
-	 * (comma separated list)*/
+	 * (comma separated list). Unless defined, all messages are reported. */
 	public static final String REPORTED_MESSAGES = "messages";
 	/** value of the granularity setting */
 	protected final int granularity;
@@ -41,9 +41,13 @@ public class MessageLocationReport extends Report implements UpdateListener {
 		this.lastUpdate = 0;	
 		this.granularity = settings.getInt(GRANULARITY);
 		
-		this.reportedMessages = new HashSet<String>();
-		for (String msgId : settings.getCsvSetting(REPORTED_MESSAGES)) {
-			this.reportedMessages.add(msgId);
+		if (settings.contains(REPORTED_MESSAGES)) {
+			this.reportedMessages = new HashSet<String>();
+			for (String msgId : settings.getCsvSetting(REPORTED_MESSAGES)) {
+				this.reportedMessages.add(msgId);
+			}
+		} else {
+			this.reportedMessages = null; /* all messages */
 		}
 		
 		init();
@@ -64,10 +68,20 @@ public class MessageLocationReport extends Report implements UpdateListener {
 	}
 	
 	/**
+	 * Returns true if the given message is tracked by the report
+	 * @param m The message
+	 * @return True if the message is tracked, false if not
+	 */
+	protected boolean isTracked(Message m) {
+		return (this.reportedMessages == null ||
+				this.reportedMessages.contains(m.getId()));
+	}
+	
+	/**
 	 * Creates a snapshot of message locations 
 	 * @param hosts The list of hosts in the world
 	 */
-	private void createSnapshot(List<DTNHost> hosts) {
+	protected void createSnapshot(List<DTNHost> hosts) {
 		boolean isFirstMessage;
 		String reportLine;
 		
@@ -77,7 +91,7 @@ public class MessageLocationReport extends Report implements UpdateListener {
 			isFirstMessage = true;
 			reportLine = "";
 			for (Message m : host.getMessageCollection()) {
-				if (this.reportedMessages.contains(m.getId())) {
+				if (isTracked(m)) {
 					if (isFirstMessage) {
 						reportLine = host.getLocation().toString();
 						isFirstMessage = false;

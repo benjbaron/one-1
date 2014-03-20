@@ -12,12 +12,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import routing.util.RoutingInfo;
+
+import util.Tuple;
+
 import core.Connection;
 import core.DTNHost;
 import core.Message;
 import core.Settings;
 import core.SimClock;
-import core.Tuple;
 
 /**
  * Implementation of PRoPHET router as described in 
@@ -127,7 +130,7 @@ public class ProphetRouterWithEstimation extends ActiveRouter {
 	}
 
 	/**
-	 * Initializes interencounter time estimator
+	 * Initializes inter-encounter time estimator
 	 */
 	private void initMeetings() {
 		this.meetings = new HashMap<DTNHost, Double>();
@@ -137,6 +140,8 @@ public class ProphetRouterWithEstimation extends ActiveRouter {
 
 	@Override
 	public void changedConnection(Connection con) {
+		super.changedConnection(con);
+		
 		if (con.isUp()) {
 			DTNHost otherHost = con.getOtherNode(getHost());
 			if (updateIET(otherHost)) {
