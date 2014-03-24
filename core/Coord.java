@@ -11,7 +11,6 @@ package core;
 public class Coord implements Cloneable, Comparable<Coord> {
 	private double x;
 	private double y;
-	private int layer = 0;
 	
 	/**
 	 * Constructor.
@@ -39,8 +38,7 @@ public class Coord implements Cloneable, Comparable<Coord> {
 	 */
 	public void setLocation(Coord c) {
 		this.x = c.x;
-		this.y = c.y;
-		this.layer = c.layer;
+		this.y = c.y;		
 	}
 	
 	/**
@@ -59,9 +57,6 @@ public class Coord implements Cloneable, Comparable<Coord> {
 	 * @return The distance between this and another coordinate
 	 */
 	public double distance(Coord other) {
-		if(this.layer != other.layer){
-			return Double.MAX_VALUE;
-		}
 		double dx = this.x - other.x;
 		double dy = this.y - other.y;
 		
@@ -74,9 +69,6 @@ public class Coord implements Cloneable, Comparable<Coord> {
 	 * @return The square distance between this and another coordinate
 	 */
 	public double distance2(Coord other) {
-		if(this.layer != other.layer){
-			return Double.MAX_VALUE;
-		}
 		double dx = this.x - other.x;
 		double dy = this.y - other.y;
 		
@@ -112,27 +104,11 @@ public class Coord implements Cloneable, Comparable<Coord> {
 	}
 	
 	/**
-	 * Returns the layer, 0 by default
-	 * @return layer
-	 */
-	public int getLayer() {
-		return layer;
-	}
-	
-	/**
-	 * set the layer, the distance between two Coords with different layer is considered Infinitely large
-	 * @param layer_id
-	 */
-	public void setLayer(int layer_id) {
-		layer = layer_id;
-	}
-	
-	/**
 	 * Returns a text representation of the coordinate (rounded to 2 decimals)
 	 * @return a text representation of the coordinate
 	 */
 	public String toString() {
-		return String.format("(%.2f,%.2f,%d)",x,y,layer);
+		return String.format("(%.2f,%.2f)",x,y);
 	}
 	
 	/**
@@ -159,7 +135,7 @@ public class Coord implements Cloneable, Comparable<Coord> {
 			return true;
 		}
 		else {
-			return (x == c.x && y == c.y && layer == c.layer);
+			return (x == c.x && y == c.y);
 		}
 	}
 
@@ -173,7 +149,7 @@ public class Coord implements Cloneable, Comparable<Coord> {
 	 * (actually a hash of the String made of the coordinates)
 	 */
 	public int hashCode() {
-		return (x+","+y+layer).hashCode();
+		return (x+","+y).hashCode();
 	}
 
 	/**
@@ -184,12 +160,7 @@ public class Coord implements Cloneable, Comparable<Coord> {
 	 * after the other coordinate
 	 */
 	public int compareTo(Coord other) {
-		if (this.layer < other.layer) {
-			return -1;
-		}else if(this.layer > other.layer){
-			return 1;
-		}
-		else if (this.y < other.y) {
+		if (this.y < other.y) {
 			return -1;
 		}
 		else if (this.y > other.y) {
