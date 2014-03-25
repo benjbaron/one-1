@@ -9,6 +9,7 @@ import java.util.List;
 
 import movement.map.MapNode;
 import core.Coord;
+import core.DTNHost;
 import core.Settings;
 
 /**
@@ -17,13 +18,7 @@ import core.Settings;
  * 
  * @author Frans Ekman
  */
-public class BusMovement extends MapRouteMovement {
-	
-	private BusControlSystem controlSystem;
-	private int id;
-	private static int nextID = 0;
-	private boolean startMode;
-	private List<Coord> stops;
+public class BusMovement extends PublicTransportMovement {
 	
 	/**
 	 * Creates a new instance of BusMovement
@@ -31,18 +26,6 @@ public class BusMovement extends MapRouteMovement {
 	 */
 	public BusMovement(Settings settings) {
 		super(settings);
-		int bcs = settings.getInt(BusControlSystem.BUS_CONTROL_SYSTEM_NR);
-		controlSystem = BusControlSystem.getBusControlSystem(bcs);
-		controlSystem.setMap(super.getMap());
-		this.id = nextID++;
-		controlSystem.registerBus(this);
-		startMode = true;
-		stops = new LinkedList<Coord>();
-		List<MapNode> stopNodes = super.getStops();
-		for (MapNode node : stopNodes) {
-			stops.add(node.getLocation().clone());
-		}
-		controlSystem.setBusStops(stops);
 	}
 	
 	/**
@@ -51,26 +34,11 @@ public class BusMovement extends MapRouteMovement {
 	 */
 	public BusMovement(BusMovement proto) {
 		super(proto);
-		this.controlSystem = proto.controlSystem;
-		this.id = nextID++;
-		controlSystem.registerBus(this);
-		startMode = true;
 	}
 	
 	@Override
-	public Coord getInitialLocation() {
-		return (super.getInitialLocation()).clone();
-	}
-
-	@Override
-	public Path getPath() {
-		Coord lastLocation = (super.getLastLocation()).clone();
-		Path path = super.getPath();
-		if (!startMode) {
-			controlSystem.busHasStopped(id, lastLocation, path);
-		}
-		startMode = false;
-		return path;
+	protected void setLayer() {
+		getHost().setLayer(DTNHost.LAYER_DEFAULT);
 	}
 
 	@Override
@@ -78,12 +46,8 @@ public class BusMovement extends MapRouteMovement {
 		return new BusMovement(this);
 	}
 
-	/**
-	 * Returns unique ID of the bus
-	 * @return unique ID of the bus
-	 */
-	public int getID() {
-		return id;
-	}
-	
+	@Override
+	public int getLayer() {
+		return DTNHost.LAYER_DEFAULT;
+	}	
 }

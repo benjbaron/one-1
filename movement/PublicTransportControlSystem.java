@@ -19,19 +19,19 @@ import core.DTNSim;
  * 
  * @author Frans Ekman
  */
-public class BusControlSystem {
+public class PublicTransportControlSystem {
 	public static final String BUS_CONTROL_SYSTEM_NR = "busControlSystemNr";
 	
-	private static HashMap<Integer, BusControlSystem> systems;
+	private static HashMap<Integer, PublicTransportControlSystem> systems;
 	
-	private HashMap<Integer, BusMovement> busses;
-	private HashMap<Integer, BusTravellerMovement> travellers;
+	private HashMap<Integer, PublicTransportMovement> busses;
+	private HashMap<Integer, PublicTransportTravellerMovement> travellers;
 	private List<Coord> busStops;
 	
 	private SimMap simMap;
 	
 	static {
-		DTNSim.registerForReset(BusControlSystem.class.getCanonicalName());
+		DTNSim.registerForReset(PublicTransportControlSystem.class.getCanonicalName());
 		reset();
 	}
 	
@@ -40,13 +40,13 @@ public class BusControlSystem {
 	 * busses
 	 * @param systemID The unique ID of this system.
 	 */
-	private BusControlSystem(int systemID) {
-		busses = new HashMap<Integer, BusMovement>();
-		travellers = new HashMap<Integer, BusTravellerMovement>();
+	private PublicTransportControlSystem(int systemID) {
+		busses = new HashMap<Integer, PublicTransportMovement>();
+		travellers = new HashMap<Integer, PublicTransportTravellerMovement>();
 	}
 	
 	public static void reset() {
-		systems = new HashMap<Integer, BusControlSystem>();
+		systems = new HashMap<Integer, PublicTransportControlSystem>();
 	}
 	
 	/**
@@ -58,17 +58,17 @@ public class BusControlSystem {
 	 * @param nextPath The path to the next stop
 	 */
 	public void busHasStopped(int busID, Coord busStop, Path nextPath) {
-		Iterator<BusTravellerMovement> iterator = travellers.values().
+		Iterator<PublicTransportTravellerMovement> iterator = travellers.values().
 			iterator();
 		while (iterator.hasNext()) {
-			BusTravellerMovement traveller = (BusTravellerMovement)iterator.
+			PublicTransportTravellerMovement traveller = (PublicTransportTravellerMovement)iterator.
 				next();
 			if (traveller.getLocation() != null) {
 				if ((traveller.getLocation()).equals(busStop)) {
-					if (traveller.getState() == BusTravellerMovement.
+					if (traveller.getState() == PublicTransportTravellerMovement.
 							STATE_WAITING_FOR_BUS) {
 						Path path = new Path(nextPath);
-						traveller.enterBus(path);
+						traveller.enterBus(path, busses.get(busID).getLayer());
 					} 
 				}
 			}
@@ -82,13 +82,13 @@ public class BusControlSystem {
 	 * @param systemID unique ID of the system
 	 * @return The bus control system with the provided ID
 	 */
-	public static BusControlSystem getBusControlSystem(int systemID) {
+	public static PublicTransportControlSystem getBusControlSystem(int systemID) {
 		Integer id = new Integer(systemID);
 		
 		if (systems.containsKey(id)) {
 			return systems.get(id);
 		} else {
-			BusControlSystem bcs = new BusControlSystem(systemID);
+			PublicTransportControlSystem bcs = new PublicTransportControlSystem(systemID);
 			systems.put(id, bcs);
 			return bcs;
 		}
@@ -98,7 +98,7 @@ public class BusControlSystem {
 	 * Registers a bus to be part of a bus control system
 	 * @param bus The bus to register
 	 */
-	public void registerBus(BusMovement bus) {
+	public void registerBus(PublicTransportMovement bus) {
 		busses.put(bus.getID(), bus);
 	}
 	
@@ -106,7 +106,7 @@ public class BusControlSystem {
 	 * Registers a traveller/passenger to be part of a bus control system
 	 * @param traveller The traveller to register
 	 */
-	public void registerTraveller(BusTravellerMovement traveller) {
+	public void registerTraveller(PublicTransportTravellerMovement traveller) {
 		travellers.put(traveller.getID(), traveller);
 	}
 	

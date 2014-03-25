@@ -22,7 +22,7 @@ public class WorkingDayMovement extends ExtendedMovementModel {
 	public static final String PROBABILITY_TO_GO_SHOPPING_SETTING = 
 		"probGoShoppingAfterWork";
 	
-	private BusTravellerMovement busTravellerMM;
+	private PublicTransportTravellerMovement busTravellerMM;
 	private OfficeActivityMovement workerMM;
 	private HomeActivityMovement homeMM;
 	private EveningActivityMovement eveningActivityMovement;
@@ -49,7 +49,7 @@ public class WorkingDayMovement extends ExtendedMovementModel {
 	 */
 	public WorkingDayMovement(Settings settings) {
 		super(settings);
-		busTravellerMM = new BusTravellerMovement(settings);
+		busTravellerMM = new PublicTransportTravellerMovement(settings);
 		workerMM = new OfficeActivityMovement(settings);
 		homeMM = new HomeActivityMovement(settings);
 		eveningActivityMovement = new EveningActivityMovement(settings);
@@ -73,7 +73,7 @@ public class WorkingDayMovement extends ExtendedMovementModel {
 	 */
 	public WorkingDayMovement(WorkingDayMovement proto) {
 		super(proto);
-		busTravellerMM = new BusTravellerMovement(proto.busTravellerMM);
+		busTravellerMM = new PublicTransportTravellerMovement(proto.busTravellerMM);
 		workerMM = new OfficeActivityMovement(proto.workerMM);
 		homeMM = new HomeActivityMovement(proto.homeMM);
 		eveningActivityMovement = new EveningActivityMovement(

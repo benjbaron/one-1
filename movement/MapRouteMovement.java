@@ -108,7 +108,6 @@ public class MapRouteMovement extends MapBasedMovement implements
 		MapNode to = route.nextStop();
 		
 		List<MapNode> nodePath = pathFinder.getShortestPath(lastMapNode, to);
-		
 		// this assertion should never fire if the map is checked in read phase
 		assert nodePath.size() > 0 : "No path from " + lastMapNode + " to " +
 			to + ". The simulation map isn't fully connected";

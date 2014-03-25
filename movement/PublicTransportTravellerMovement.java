@@ -11,6 +11,7 @@ import movement.map.DijkstraPathFinder;
 import movement.map.MapNode;
 import movement.map.SimMap;
 import core.Coord;
+import core.DTNHost;
 import core.Settings;
 
 /**
@@ -25,7 +26,7 @@ import core.Settings;
  * @author Frans Ekman
  *
  */
-public class BusTravellerMovement extends MapBasedMovement implements 
+public class PublicTransportTravellerMovement extends MapBasedMovement implements 
 	SwitchableMovement, TransportMovement {
 
 	public static final String PROBABILITIES_STRING = "probs";
@@ -40,7 +41,7 @@ public class BusTravellerMovement extends MapBasedMovement implements
 	private Path nextPath;
 	private Coord location;
 	private Coord latestBusStop;
-	private BusControlSystem controlSystem;
+	private PublicTransportControlSystem controlSystem;
 	private int id;
 	private ContinueBusTripDecider cbtd;
 	private double[] probabilities;
@@ -58,10 +59,10 @@ public class BusTravellerMovement extends MapBasedMovement implements
 	 * Creates a BusTravellerModel 
 	 * @param settings
 	 */
-	public BusTravellerMovement(Settings settings) {
+	public PublicTransportTravellerMovement(Settings settings) {
 		super(settings);
-		int bcs = settings.getInt(BusControlSystem.BUS_CONTROL_SYSTEM_NR);
-		controlSystem = BusControlSystem.getBusControlSystem(bcs);
+		int bcs = settings.getInt(PublicTransportControlSystem.BUS_CONTROL_SYSTEM_NR);
+		controlSystem = PublicTransportControlSystem.getBusControlSystem(bcs);
 		id = nextID++;
 		controlSystem.registerTraveller(this);
 		nextPath = new Path();
@@ -81,7 +82,7 @@ public class BusTravellerMovement extends MapBasedMovement implements
 	 * Creates a BusTravellerModel from a prototype
 	 * @param proto
 	 */
-	public BusTravellerMovement(BusTravellerMovement proto) {
+	public PublicTransportTravellerMovement(PublicTransportTravellerMovement proto) {
 		super(proto);
 		state = proto.state;
 		controlSystem = proto.controlSystem;
@@ -164,7 +165,7 @@ public class BusTravellerMovement extends MapBasedMovement implements
 	
 	@Override
 	public MapBasedMovement replicate() {
-		return new BusTravellerMovement(this);
+		return new PublicTransportTravellerMovement(this);
 	}
 
 	public int getState() {
@@ -187,15 +188,16 @@ public class BusTravellerMovement extends MapBasedMovement implements
 	 * busses are also notified.
 	 * @param nextPath The next path the bus is going to take
 	 */
-	public void enterBus(Path nextPath) {
-		
+	public void enterBus(Path nextPath, int layer) {
 		if (startBusStop != null && endBusStop != null) {
 			if (location.equals(endBusStop)) {
 				state = STATE_WALKING_ELSEWHERE;
 				latestBusStop = location.clone();
+				getHost().setLayer(0);
 			} else {
 				state = STATE_DECIDED_TO_ENTER_A_BUS;
 				this.nextPath = nextPath;
+				getHost().setLayer(layer);
 			}
 			return;
 		}
@@ -203,15 +205,18 @@ public class BusTravellerMovement extends MapBasedMovement implements
 		if (!cbtd.continueTrip()) {
 			state = STATE_WAITING_FOR_BUS;
 			this.nextPath = null;
+			getHost().setLayer(layer);
 			/* It might decide not to start walking somewhere and wait 
 			   for the next bus */
 			if (rng.nextDouble() > probTakeOtherBus) {
 				state = STATE_WALKING_ELSEWHERE;
 				latestBusStop = location.clone();
+				getHost().setLayer(DTNHost.LAYER_DEFAULT);
 			}
 		} else {
 			state = STATE_DECIDED_TO_ENTER_A_BUS;
 			this.nextPath = nextPath;
+			getHost().setLayer(layer);
 		}
 	}
 	

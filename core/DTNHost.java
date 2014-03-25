@@ -18,6 +18,8 @@ import routing.util.RoutingInfo;
  * A DTN capable host.
  */
 public class DTNHost implements Comparable<DTNHost> {
+	public static final int LAYER_DEFAULT = 0;
+	public static final int LAYER_UNDERGROUND = -1;
 	private static int nextAddress = 0;
 	private int address;
 
@@ -34,6 +36,7 @@ public class DTNHost implements Comparable<DTNHost> {
 	private List<MovementListener> movListeners;
 	private List<NetworkInterface> net;
 	private ModuleCommunicationBus comBus;
+	private int layer = LAYER_DEFAULT;
 
 	static {
 		DTNSim.registerForReset(DTNHost.class.getCanonicalName());
@@ -281,6 +284,22 @@ public class DTNHost implements Comparable<DTNHost> {
 			}
 		}
 		return null;	
+	}
+	
+	/**
+	 * specify which layer this host is located
+	 * @param layer
+	 */
+	public void setLayer(int layer) {
+		this.layer = layer;
+	}
+	
+	/**
+	 * get which layer this host is located
+	 * @return
+	 */
+	public int getLayer() {
+		return layer;
 	}
 
 	/**
