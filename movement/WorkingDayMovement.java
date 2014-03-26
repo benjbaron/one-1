@@ -5,6 +5,7 @@
 package movement;
 
 import core.Coord;
+import core.DTNHost;
 import core.Settings;
 
 /**
@@ -176,5 +177,13 @@ public class WorkingDayMovement extends ExtendedMovementModel {
 	public Coord getShoppingLocation() {
 		return eveningActivityMovement.getShoppingLocation().clone();
 	}
+
+	@Override
+	public void setHost(DTNHost host) {
+		super.setHost(host);
+		busTravellerMM.setHost(host);
+	}
+	
+	
 	
 }
