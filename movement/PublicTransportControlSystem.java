@@ -10,6 +10,7 @@ import java.util.List;
 
 import movement.map.SimMap;
 import core.Coord;
+import core.DTNHost;
 import core.DTNSim;
 
 /**
@@ -27,7 +28,7 @@ public class PublicTransportControlSystem {
 	private HashMap<Integer, PublicTransportMovement> busses;
 	private HashMap<Integer, PublicTransportTravellerMovement> travellers;
 	private List<Coord> busStops;
-	
+	private int layer = DTNHost.LAYER_DEFAULT;
 	private SimMap simMap;
 	
 	static {
@@ -68,7 +69,7 @@ public class PublicTransportControlSystem {
 					if (traveller.getState() == PublicTransportTravellerMovement.
 							STATE_WAITING_FOR_BUS) {
 						Path path = new Path(nextPath);
-						traveller.enterBus(path, busses.get(busID).getLayer());
+						traveller.enterBus(path);
 					} 
 				}
 			}
@@ -100,6 +101,7 @@ public class PublicTransportControlSystem {
 	 */
 	public void registerBus(PublicTransportMovement bus) {
 		busses.put(bus.getID(), bus);
+		setLayer(bus.getLayer());
 	}
 	
 	/**
@@ -140,5 +142,22 @@ public class PublicTransportControlSystem {
 	public void setBusStops(List<Coord> busStops) {
 		this.busStops = busStops;
 	}
+	
+	/**
+	 * @return the layer of the line controlled by this control system
+	 */
+	public int getLayer() {
+		return layer;
+	}
+
+	/**
+	 * set the layer of the line controlled by this control system
+	 * @param layer
+	 */
+	public void setLayer(int layer) {
+		this.layer = layer;
+	}
+	
+	
 	
 }

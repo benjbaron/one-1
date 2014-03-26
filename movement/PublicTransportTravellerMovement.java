@@ -155,6 +155,7 @@ public class PublicTransportTravellerMovement extends MapBasedMovement implement
 		if (state == STATE_WALKING_ELSEWHERE) {
 			if (location.equals(latestBusStop)) {
 				state = STATE_WAITING_FOR_BUS;
+				getHost().setLayer(this.controlSystem.getLayer());
 			}
 		}
 		if (state == STATE_TRAVELLING_ON_BUS) {
@@ -188,16 +189,15 @@ public class PublicTransportTravellerMovement extends MapBasedMovement implement
 	 * busses are also notified.
 	 * @param nextPath The next path the bus is going to take
 	 */
-	public void enterBus(Path nextPath, int layer) {
+	public void enterBus(Path nextPath) {
 		if (startBusStop != null && endBusStop != null) {
 			if (location.equals(endBusStop)) {
 				state = STATE_WALKING_ELSEWHERE;
 				latestBusStop = location.clone();
-				getHost().setLayer(0);
+				getHost().setLayer(DTNHost.LAYER_DEFAULT);
 			} else {
 				state = STATE_DECIDED_TO_ENTER_A_BUS;
 				this.nextPath = nextPath;
-				getHost().setLayer(layer);
 			}
 			return;
 		}
@@ -205,7 +205,6 @@ public class PublicTransportTravellerMovement extends MapBasedMovement implement
 		if (!cbtd.continueTrip()) {
 			state = STATE_WAITING_FOR_BUS;
 			this.nextPath = null;
-			getHost().setLayer(layer);
 			/* It might decide not to start walking somewhere and wait 
 			   for the next bus */
 			if (rng.nextDouble() > probTakeOtherBus) {
@@ -216,7 +215,6 @@ public class PublicTransportTravellerMovement extends MapBasedMovement implement
 		} else {
 			state = STATE_DECIDED_TO_ENTER_A_BUS;
 			this.nextPath = nextPath;
-			getHost().setLayer(layer);
 		}
 	}
 	
