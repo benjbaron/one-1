@@ -6,7 +6,11 @@ package movement;
 
 import input.WKTReader;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -46,6 +50,8 @@ public class OfficeActivityMovement extends MapBasedMovement implements
 		"officeMaxWaitTime"; 
 	public static final String OFFICE_LOCATIONS_FILE_SETTING = 
 		"officeLocationsFile";
+	public static final String OFFICE_FLOOR_FILE_SETTING =
+		"officeFloorFile";
 	
 	private static int nrOfOffices = 50;
 	
@@ -63,10 +69,12 @@ public class OfficeActivityMovement extends MapBasedMovement implements
 	private double officeMaxWaitTime;
 	
 	private List<Coord> allOffices;
+	private List<Integer> numsOfFloors;
 	
 	private Coord lastWaypoint;
 	private Coord officeLocation;
 	private Coord deskLocation;
+	private int	officeFloor;// the floor it stays on, floors start from 0
 	
 	private boolean sittingAtDesk;
 	
@@ -104,6 +112,7 @@ public class OfficeActivityMovement extends MapBasedMovement implements
 			int officeIndex = rng.nextInt(mapNodes.length - 1) /
 				(mapNodes.length/nrOfOffices);
 			officeLocation = mapNodes[officeIndex].getLocation().clone();
+			officeFloor = 0;
 		} else {
 			try {
 				allOffices = new LinkedList<Coord>();
@@ -119,8 +128,11 @@ public class OfficeActivityMovement extends MapBasedMovement implements
 					coord.translate(offset.getX(), offset.getY());
 					allOffices.add(coord);
 				}
-				officeLocation = allOffices.get(
-						rng.nextInt(allOffices.size())).clone();
+				numsOfFloors = getFloorInfo(settings, allOffices.size());
+				int officeIndex = rng.nextInt(allOffices.size());
+				officeLocation = allOffices.get(officeIndex).clone();
+				officeFloor = rng.nextInt(numsOfFloors.get(officeIndex));
+				System.out.println("office floor =" + officeFloor);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -131,6 +143,37 @@ public class OfficeActivityMovement extends MapBasedMovement implements
 				officeMinWaitTime, officeMaxWaitTime);
 	}
 	
+	private List<Integer> getFloorInfo(Settings settings, int numOfOffice) throws NumberFormatException, IOException {
+		LinkedList<Integer> ret = new LinkedList<Integer>();
+		String officeFloorFile = null;
+		try {
+			officeFloorFile = settings.getSetting(
+					OFFICE_FLOOR_FILE_SETTING);
+		} catch (Throwable t) {
+			// Do nothing;
+		}
+		if (officeFloorFile == null) {
+			for(int i=0; i<numOfOffice; i++){
+				ret.add(1);
+			}
+		}else{
+			fillFloorInfo(new File(officeFloorFile), ret);
+			int diff = (numOfOffice>ret.size())?numOfOffice-ret.size():0;
+			for(int i = 0; i<diff; i++){
+				ret.add(1);
+			}
+		}
+		return ret;
+	}
+
+	private void fillFloorInfo(File file, LinkedList<Integer> ret) throws NumberFormatException, IOException {
+		BufferedReader reader = new BufferedReader(new FileReader(file));
+		String line = null;
+		while((line = reader.readLine()) != null){
+			ret.add(Integer.parseInt(line));
+		}
+	}
+
 	/**
 	 * Copyconstructor
 	 * @param proto
@@ -149,10 +192,15 @@ public class OfficeActivityMovement extends MapBasedMovement implements
 			int officeIndex = rng.nextInt(mapNodes.length - 1) / 
 				(mapNodes.length/nrOfOffices);
 			officeLocation = mapNodes[officeIndex].getLocation().clone();
+			officeFloor = 0;
 		} else {
 			this.allOffices = proto.allOffices;
+			int officeIndex = rng.nextInt(allOffices.size());
 			officeLocation = allOffices.get(
-					rng.nextInt(allOffices.size())).clone();
+					officeIndex).clone();
+			this.numsOfFloors = proto.numsOfFloors;
+			officeFloor = rng.nextInt(numsOfFloors.get(officeIndex));
+			System.out.println("office floor from proto =" + officeFloor);
 		}
 		
 		officeWaitTimeParetoCoeff = proto.officeWaitTimeParetoCoeff;
@@ -211,6 +259,7 @@ public class OfficeActivityMovement extends MapBasedMovement implements
 			mode = AT_OFFICE_MODE;
 			return path;
 		}
+		setHostLayer(this.officeFloor);
 		
 		if (startedWorkingTime == -1) {
 			startedWorkingTime = SimClock.getIntTime();
@@ -219,6 +268,7 @@ public class OfficeActivityMovement extends MapBasedMovement implements
 			Path path =  new Path(1);
 			path.addWaypoint(lastWaypoint.clone());
 			ready = true;
+			setHostLayer(0);
 			return path;
 		}
 		Coord c;
@@ -281,6 +331,11 @@ public class OfficeActivityMovement extends MapBasedMovement implements
 	 */
 	public Coord getOfficeLocation() {
 		return officeLocation.clone();
+	}
+
+	private void setHostLayer(int floor) {
+		this.getHost().setLayer(floor);
+		System.out.println("at office floor:" + officeFloor);
 	}
 
 }

@@ -182,6 +182,7 @@ public class WorkingDayMovement extends ExtendedMovementModel {
 	public void setHost(DTNHost host) {
 		super.setHost(host);
 		busTravellerMM.setHost(host);
+		workerMM.setHost(host);
 	}
 	
 	
