@@ -101,7 +101,6 @@ public class PublicTransportControlSystem {
 	 */
 	public void registerBus(PublicTransportMovement bus) {
 		busses.put(bus.getID(), bus);
-		setLayer(bus.getLayer());
 	}
 	
 	/**

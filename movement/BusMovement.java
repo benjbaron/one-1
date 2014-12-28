@@ -4,11 +4,6 @@
  */
 package movement;
 
-import java.util.LinkedList;
-import java.util.List;
-
-import movement.map.MapNode;
-import core.Coord;
 import core.DTNHost;
 import core.Settings;
 

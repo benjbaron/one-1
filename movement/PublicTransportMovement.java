@@ -26,6 +26,7 @@ public abstract class PublicTransportMovement extends MapRouteMovement {
 		controlSystem.setMap(super.getMap());
 		this.id = nextID++;
 		controlSystem.registerBus(this);
+		controlSystem.setLayer(this.getLayer());
 		startMode = true;
 		stops = new LinkedList<Coord>();
 		List<MapNode> stopNodes = super.getStops();

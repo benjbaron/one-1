@@ -183,6 +183,9 @@ public class WorkingDayMovement extends ExtendedMovementModel {
 		super.setHost(host);
 		busTravellerMM.setHost(host);
 		workerMM.setHost(host);
+		homeMM.setHost(host);
+		eveningActivityMovement.setHost(host);
+		carMM.setHost(host);
 	}
 	
 	
