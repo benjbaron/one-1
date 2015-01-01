@@ -32,10 +32,12 @@ public class PublicTransportTravellerMovement extends MapBasedMovement implement
 	public static final String PROBABILITIES_STRING = "probs";
 	public static final String PROBABILITY_TAKE_OTHER_BUS = "probTakeOtherBus";
 	
-	public static final int STATE_WAITING_FOR_BUS = 0;
-	public static final int STATE_DECIDED_TO_ENTER_A_BUS = 1;
-	public static final int STATE_TRAVELLING_ON_BUS = 2;
-	public static final int STATE_WALKING_ELSEWHERE = 3;
+	public static final int STATE_INITIAL = 0;
+	public static final int STATE_WALKING = 1;
+	public static final int STATE_WAITING = 2;
+	public static final int STATE_BOARDING = 3;
+	public static final int STATE_ONVEHICLE = 4;
+	public static final int STATE_READY = 5;
 	
 	private int state;
 	private Path nextPath;
@@ -66,7 +68,7 @@ public class PublicTransportTravellerMovement extends MapBasedMovement implement
 		id = nextID++;
 		controlSystem.registerTraveller(this);
 		nextPath = new Path();
-		state = STATE_WALKING_ELSEWHERE;
+		state = STATE_INITIAL;
 		if (settings.contains(PROBABILITIES_STRING)) {
 			probabilities = settings.getCsvDoubles(PROBABILITIES_STRING);
 		}
@@ -88,7 +90,7 @@ public class PublicTransportTravellerMovement extends MapBasedMovement implement
 		id = nextID++;
 		controlSystem.registerTraveller(this);
 		nextPath = new Path();
-		state = STATE_WALKING_ELSEWHERE;
+		state = STATE_INITIAL;
 		if (settings.contains(PROBABILITIES_STRING)) {
 			probabilities = settings.getCsvDoubles(PROBABILITIES_STRING);
 		}
@@ -141,14 +143,8 @@ public class PublicTransportTravellerMovement extends MapBasedMovement implement
 		if (!takeBus) {
 			return null;
 		}
-		if (state == STATE_WAITING_FOR_BUS) {
-			return null;
-		} else if (state == STATE_DECIDED_TO_ENTER_A_BUS) {
-			state = STATE_TRAVELLING_ON_BUS;
-			List<Coord> coords = nextPath.getCoords();
-			location = (coords.get(coords.size() - 1)).clone();
-			return nextPath;
-		} else if (state == STATE_WALKING_ELSEWHERE) {
+		
+		if (getState() == STATE_INITIAL) {
 			// Try to find back to the bus stop
 			SimMap map = controlSystem.getMap();
 			if (map == null) {
@@ -157,16 +153,22 @@ public class PublicTransportTravellerMovement extends MapBasedMovement implement
 			MapNode thisNode = map.getNodeByCoord(location);
 			MapNode destinationNode = map.getNodeByCoord(latestBusStop);
 			List<MapNode> nodes = pathFinder.getShortestPath(thisNode, 
-					destinationNode);
+								destinationNode);
 			Path path = new Path(generateSpeed());
 			for (MapNode node : nodes) {
 				path.addWaypoint(node.getLocation());
 			}
 			location = latestBusStop.clone();
+			setState(STATE_WALKING);
 			return path;
+		} else if (getState() == STATE_BOARDING) {
+			List<Coord> coords = nextPath.getCoords();
+			location = (coords.get(coords.size() - 1)).clone();
+			setState(STATE_ONVEHICLE);
+			return nextPath;
+		} else {
+			return null;
 		}
-			
-		return null;
 	}
 
 	/**
@@ -174,15 +176,14 @@ public class PublicTransportTravellerMovement extends MapBasedMovement implement
 	 * @return Always 0 
 	 */
 	protected double generateWaitTime() {
-		if (state == STATE_WALKING_ELSEWHERE) {
-			if (location.equals(latestBusStop)) {
-				state = STATE_WAITING_FOR_BUS;
-				getHost().setLayer(this.controlSystem.getLayer());
-			}
+		
+		if (getState() == STATE_WALKING) {		
+			setState(STATE_WAITING);
+			getHost().setLayer(this.controlSystem.getLayer());
+		} else if (getState() == STATE_ONVEHICLE) {
+			setState(STATE_WAITING);
 		}
-		if (state == STATE_TRAVELLING_ON_BUS) {
-			state = STATE_WAITING_FOR_BUS;
-		}
+		
 		return 0;
 	}
 	
@@ -212,30 +213,26 @@ public class PublicTransportTravellerMovement extends MapBasedMovement implement
 	 * @param nextPath The next path the bus is going to take
 	 */
 	public void enterBus(Path nextPath) {
+		if (getState() != STATE_WAITING){
+			return;
+		}
+		
 		if (startBusStop != null && endBusStop != null) {
 			if (location.equals(endBusStop)) {
-				state = STATE_WALKING_ELSEWHERE;
+				setState(STATE_READY);
 				latestBusStop = location.clone();
 				getHost().setLayer(DTNHost.LAYER_DEFAULT);	
 			} else {
-				state = STATE_DECIDED_TO_ENTER_A_BUS;
+				setState(STATE_BOARDING);
 				this.nextPath = nextPath;
 			}
 			return;
 		}
 		
 		if (!cbtd.continueTrip()) {
-			state = STATE_WAITING_FOR_BUS;
-			this.nextPath = null;
-			/* It might decide not to start walking somewhere and wait 
-			   for the next bus */
-			if (rng.nextDouble() > probTakeOtherBus) {
-				state = STATE_WALKING_ELSEWHERE;
-				latestBusStop = location.clone();
-				getHost().setLayer(DTNHost.LAYER_DEFAULT);
-			}
+			setState(STATE_WAITING);
 		} else {
-			state = STATE_DECIDED_TO_ENTER_A_BUS;
+			setState(STATE_BOARDING);
 			this.nextPath = nextPath;
 		}
 	}
@@ -341,6 +338,7 @@ public class PublicTransportTravellerMovement extends MapBasedMovement implement
 		
 		if (directDistance < busDistance) {
 			takeBus = false;
+			setState(STATE_READY);
 		} else {
 			takeBus = true;
 		}
@@ -368,7 +366,7 @@ public class PublicTransportTravellerMovement extends MapBasedMovement implement
 	 * @see SwitchableMovement
 	 */
 	public boolean isReady() {
-		if (state == STATE_WALKING_ELSEWHERE) {
+		if (getState() == STATE_READY) {
 			return true;
 		} else {
 			return false;
@@ -389,5 +387,9 @@ public class PublicTransportTravellerMovement extends MapBasedMovement implement
 	
 	public Coord getEndBusStop() {
 		return endBusStop;
+	}
+	
+	public void setState(int state){
+		this.state = state;
 	}
 }

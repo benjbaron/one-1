@@ -67,7 +67,7 @@ public class PublicTransportControlSystem {
 			if (traveller.getLocation() != null) {
 				if ((traveller.getLocation()).equals(busStop)) {
 					if (traveller.getState() == PublicTransportTravellerMovement.
-							STATE_WAITING_FOR_BUS) {
+							STATE_WAITING) {
 						Path path = new Path(nextPath);
 						traveller.enterBus(path);
 					} 
