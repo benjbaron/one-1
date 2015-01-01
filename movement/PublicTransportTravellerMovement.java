@@ -79,6 +79,28 @@ public class PublicTransportTravellerMovement extends MapBasedMovement implement
 	}
 	
 	/**
+	 * constructor convenient for unit test
+	 */
+	public PublicTransportTravellerMovement(Settings settings, SimMap newMap, int nrofMaps){
+		super(settings, newMap, nrofMaps);
+		int bcs = settings.getInt(PublicTransportControlSystem.BUS_CONTROL_SYSTEM_NR);
+		controlSystem = PublicTransportControlSystem.getBusControlSystem(bcs);
+		id = nextID++;
+		controlSystem.registerTraveller(this);
+		nextPath = new Path();
+		state = STATE_WALKING_ELSEWHERE;
+		if (settings.contains(PROBABILITIES_STRING)) {
+			probabilities = settings.getCsvDoubles(PROBABILITIES_STRING);
+		}
+		if (settings.contains(PROBABILITY_TAKE_OTHER_BUS)) {
+			probTakeOtherBus = settings.getDouble(PROBABILITY_TAKE_OTHER_BUS);
+		}
+		cbtd = new ContinueBusTripDecider(rng, probabilities);
+		pathFinder = new DijkstraPathFinder(null);
+		takeBus = true;
+	}
+	
+	/**
 	 * Creates a BusTravellerModel from a prototype
 	 * @param proto
 	 */
@@ -194,7 +216,7 @@ public class PublicTransportTravellerMovement extends MapBasedMovement implement
 			if (location.equals(endBusStop)) {
 				state = STATE_WALKING_ELSEWHERE;
 				latestBusStop = location.clone();
-				getHost().setLayer(DTNHost.LAYER_DEFAULT);
+				getHost().setLayer(DTNHost.LAYER_DEFAULT);	
 			} else {
 				state = STATE_DECIDED_TO_ENTER_A_BUS;
 				this.nextPath = nextPath;
@@ -232,7 +254,7 @@ public class PublicTransportTravellerMovement extends MapBasedMovement implement
 	 * 
 	 * @author Frans Ekman
 	 */
-	class ContinueBusTripDecider {
+	public class ContinueBusTripDecider {
 		
 		private double[] probabilities; // Probability to travel with bus
 		private int state;
@@ -357,4 +379,15 @@ public class PublicTransportTravellerMovement extends MapBasedMovement implement
 		nextID = 0;
 	}
 	
+	public Coord getLatestBusStop() {
+		return latestBusStop;
+	}
+	
+	public Coord getStartBusStop() {
+		return startBusStop;
+	}
+	
+	public Coord getEndBusStop() {
+		return endBusStop;
+	}
 }

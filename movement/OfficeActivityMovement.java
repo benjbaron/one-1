@@ -132,7 +132,6 @@ public class OfficeActivityMovement extends MapBasedMovement implements
 				int officeIndex = rng.nextInt(allOffices.size());
 				officeLocation = allOffices.get(officeIndex).clone();
 				officeFloor = rng.nextInt(numsOfFloors.get(officeIndex));
-				System.out.println("office floor =" + officeFloor);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -200,7 +199,6 @@ public class OfficeActivityMovement extends MapBasedMovement implements
 					officeIndex).clone();
 			this.numsOfFloors = proto.numsOfFloors;
 			officeFloor = rng.nextInt(numsOfFloors.get(officeIndex));
-			System.out.println("office floor from proto =" + officeFloor);
 		}
 		
 		officeWaitTimeParetoCoeff = proto.officeWaitTimeParetoCoeff;
@@ -259,10 +257,10 @@ public class OfficeActivityMovement extends MapBasedMovement implements
 			mode = AT_OFFICE_MODE;
 			return path;
 		}
-		setHostLayer(this.officeFloor);
 		
 		if (startedWorkingTime == -1) {
 			startedWorkingTime = SimClock.getIntTime();
+			setHostLayer(this.officeFloor);//only is set once when starting working at office
 		}
 		if (SimClock.getIntTime() - startedWorkingTime >= workDayLength) {
 			Path path =  new Path(1);

@@ -41,7 +41,7 @@ public class PublicTransportControlSystem {
 	 * busses
 	 * @param systemID The unique ID of this system.
 	 */
-	private PublicTransportControlSystem(int systemID) {
+	protected PublicTransportControlSystem(int systemID) {
 		busses = new HashMap<Integer, PublicTransportMovement>();
 		travellers = new HashMap<Integer, PublicTransportTravellerMovement>();
 	}
