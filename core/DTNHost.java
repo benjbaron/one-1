@@ -49,14 +49,15 @@ public class DTNHost implements Comparable<DTNHost> {
 	 * @param groupId GroupID of this host
 	 * @param interf List of NetworkInterfaces for the class
 	 * @param comBus Module communication bus object
-	 * @param mmProto Prototype of the movement model of this host
+	 * @param mmP the movement model for this host
+	 * @param mmIsProto the flag indicating whether the movement model is prototype or not
 	 * @param mRouterProto Prototype of the message router of this host
 	 */
 	public DTNHost(List<MessageListener> msgLs,
 			List<MovementListener> movLs,
 			String groupId, List<NetworkInterface> interf,
 			ModuleCommunicationBus comBus, 
-			MovementModel mmProto, MessageRouter mRouterProto) {
+			MovementModel mmProto, boolean mmIsProto, MessageRouter mRouterProto) {
 		this.comBus = comBus;
 		this.location = new Coord(0,0);
 		this.address = getNextAddress();
@@ -74,8 +75,14 @@ public class DTNHost implements Comparable<DTNHost> {
 		this.msgListeners = msgLs;
 		this.movListeners = movLs;
 
-		// create instances by replicating the prototypes
-		this.movement = mmProto.replicate();
+		
+		if (mmIsProto) {
+			// create instances by replicating the prototypes
+			this.movement = mmProto.replicate();
+		}else {
+			// use the mm directly
+			this.movement = mmProto;
+		}
 		this.movement.setComBus(comBus);
 		this.movement.setHost(this);
 		setRouter(mRouterProto.replicate());

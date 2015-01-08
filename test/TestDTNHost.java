@@ -36,7 +36,7 @@ public class TestDTNHost extends DTNHost {
 	public TestDTNHost(List<NetworkInterface> li, 
 			ModuleCommunicationBus comBus, Settings testSettings) {
 		super(null,null,"TST", li, comBus, 
-				new StationaryMovement(new Coord(0,0)), 
+				new StationaryMovement(new Coord(0,0)), false,
 				new PassiveRouter(
 						(testSettings == null ? new TestSettings() :
 							testSettings)));

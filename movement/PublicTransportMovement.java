@@ -23,17 +23,11 @@ public abstract class PublicTransportMovement extends MapRouteMovement {
 		super(settings);
 		int bcs = settings.getInt(PublicTransportControlSystem.BUS_CONTROL_SYSTEM_NR);
 		controlSystem = PublicTransportControlSystem.getBusControlSystem(bcs);
-		controlSystem.setMap(super.getMap());
-		this.id = nextID++;
-		controlSystem.registerBus(this);
-		controlSystem.setLayer(this.getLayer());
-		startMode = true;
-		stops = new LinkedList<Coord>();
-		List<MapNode> stopNodes = super.getStops();
-		for (MapNode node : stopNodes) {
-			stops.add(node.getLocation().clone());
-		}
-		controlSystem.setBusStops(stops);
+	}
+	
+	public PublicTransportMovement(Settings settings, int bcs, boolean isScheduled) {
+		super(settings, isScheduled);
+		controlSystem = PublicTransportControlSystem.getBusControlSystem(bcs);
 	}
 	
 	/**
@@ -48,6 +42,22 @@ public abstract class PublicTransportMovement extends MapRouteMovement {
 		startMode = true;
 	}
 	
+	// always invoked right after the prototype instance is built up
+	@Override
+	public void initProto() {
+		controlSystem.setMap(super.getMap());
+		this.id = nextID++;
+		controlSystem.registerBus(this);
+		controlSystem.setLayer(this.getLayer());
+		startMode = true;
+		stops = new LinkedList<Coord>();
+		List<MapNode> stopNodes = super.getStops();
+		for (MapNode node : stopNodes) {
+			stops.add(node.getLocation().clone());
+		}
+		controlSystem.setBusStops(stops);
+	}
+	
 	@Override
 	public Coord getInitialLocation() {
 		setLayer();
@@ -60,7 +70,9 @@ public abstract class PublicTransportMovement extends MapRouteMovement {
 	public Path getPath() {
 		Coord lastLocation = (super.getLastLocation()).clone();
 		Path path = super.getPath();
-		if (!startMode) {
+		// looks like random transport vehicles don't take passenger at starting stop. No change to it.
+		// for scheduled transport, vehicles do take passengers at starting stop. -Zhiqi
+		if (!startMode || isScheduled()) {
 			controlSystem.busHasStopped(id, lastLocation, path);
 		}
 		startMode = false;

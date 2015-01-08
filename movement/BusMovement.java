@@ -23,6 +23,10 @@ public class BusMovement extends PublicTransportMovement {
 		super(settings);
 	}
 	
+	public BusMovement(Settings settings, int bcs, boolean isScheduled) {
+		super(settings, bcs, isScheduled);
+	}
+	
 	/**
 	 * Create a new instance from a prototype
 	 * @param proto

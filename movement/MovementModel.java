@@ -150,6 +150,11 @@ public abstract class MovementModel {
 		this.ah = mm.ah;
 		this.comBus = null;
 	}
+	
+	// always invoked right after the prototype instance is built up
+	public void initProto() {
+		
+	}
 		
 	/**
 	 * Returns the largest X coordinate value this model uses
