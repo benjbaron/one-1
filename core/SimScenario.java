@@ -15,6 +15,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 import movement.BusMovement;
 import movement.MapBasedMovement;
@@ -22,10 +23,10 @@ import movement.MapRouteMovement;
 import movement.MetroMovement;
 import movement.MovementModel;
 import movement.PublicTransportMovement;
-import movement.ScheduleRoute;
-import movement.VehicleSchedule;
 import movement.map.MapNode;
 import movement.map.SimMap;
+import movement.schedule.RouteSchedule;
+import movement.schedule.VehicleSchedule;
 import routing.MessageRouter;
 
 import com.fasterxml.jackson.core.JsonParseException;
@@ -325,46 +326,49 @@ public class SimScenario implements Serializable {
 		return this.appListeners;
 	}
 	
-	public HashMap<Integer, Coord> loadStopMap() {
+	public HashMap<String, Coord> loadStopMap() {
 		Settings s = new Settings(MapRouteMovement.SCHEDULED_MOVEMENT_NS_S);
 		if (!s.contains(MapRouteMovement.STOP_FILE_S)) {
 			return null;
 		}else {	
 			String path = s.getSetting(MapRouteMovement.STOP_FILE_S);
-			
-			HashMap<Integer, Coord> stopMap = null;
-			ObjectMapper mapper = new ObjectMapper();
-			
-			try {
-				stopMap = mapper.readValue(new FileReader(new File(path)), 
-						    new TypeReference<HashMap<Integer, Coord>>(){});
-			} catch (JsonParseException e) {
-				System.err.println("file " + path + " failed to be parsed.");
-				e.printStackTrace();
-				System.exit(-1);
-			} catch (JsonMappingException e) {
-				System.err.println("file " + path + " failed to be parsed.");
-				e.printStackTrace();
-				System.exit(-1);
-			} catch (FileNotFoundException e) {
-				System.err.println("file " + path + " is not found.");
-				System.exit(-1);
-			} catch (IOException e) {
-				e.printStackTrace();
-				System.exit(-1);
-			}
-			return stopMap;
+			return loadStopMap(path);	
 		}	
 	}
 	
+	public static HashMap<String, Coord> loadStopMap(String path) {
+		HashMap<String, Coord> stopMap = null;
+		ObjectMapper mapper = new ObjectMapper();
+		
+		try {
+			stopMap = mapper.readValue(new FileReader(new File(path)), 
+					    new TypeReference<HashMap<String, Coord>>(){});
+		} catch (JsonParseException e) {
+			System.err.println("file " + path + " failed to be parsed.");
+			e.printStackTrace();
+			System.exit(-1);
+		} catch (JsonMappingException e) {
+			System.err.println("file " + path + " failed to be parsed.");
+			e.printStackTrace();
+			System.exit(-1);
+		} catch (FileNotFoundException e) {
+			System.err.println("file " + path + " is not found.");
+			System.exit(-1);
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.exit(-1);
+		}
+		return stopMap;
+	}
+
 	@SuppressWarnings("unchecked")
-	public ArrayList<ScheduleRoute> loadSchedules(String scheduleFilePath) {
-		ArrayList<ScheduleRoute> ret = null;
+	public ArrayList<RouteSchedule> loadSchedules(String scheduleFilePath) {
+		ArrayList<RouteSchedule> ret = null;
 		ObjectMapper mapper = new ObjectMapper();
 		TypeFactory typeFactory = mapper.getTypeFactory();
 		try {
-			ret = (ArrayList<ScheduleRoute>)mapper.readValue(new FileReader(new File(scheduleFilePath)), 
-					typeFactory.constructCollectionType(ArrayList.class, ScheduleRoute.class));
+			ret = (ArrayList<RouteSchedule>)mapper.readValue(new FileReader(new File(scheduleFilePath)), 
+					typeFactory.constructCollectionType(ArrayList.class, RouteSchedule.class));
 		}catch (FileNotFoundException e) {
 			System.err.println("file " + scheduleFilePath + " is not found.");
 			System.exit(-1);
@@ -382,10 +386,10 @@ public class SimScenario implements Serializable {
 	 */
 	protected void createHosts() {
 		this.hosts = new ArrayList<DTNHost>();
-		HashMap<Integer, Coord> stopMap = null;
-		HashMap<Integer, MapNode> stopMapTranslated = null;
+		HashMap<String, Coord> stopMap = null;
+		HashMap<String, MapNode> stopMapTranslated = null;
 		stopMap = loadStopMap();
-
+		
 		for (int i=1; i<=nrofGroups; i++) {
 			List<NetworkInterface> interfaces = 
 				new ArrayList<NetworkInterface>();
@@ -398,7 +402,7 @@ public class SimScenario implements Serializable {
 			
 			// variables for scheduled vehicle
 			boolean isScheduled = false;
-			ArrayList<ScheduleRoute> schedules = null;
+			ArrayList<RouteSchedule> schedules = null;
 			
 			if (s.contains(MapRouteMovement.IS_SCHEDULED_S) && s.getBoolean(MapRouteMovement.IS_SCHEDULED_S)) {
 				isScheduled = true;
@@ -487,7 +491,7 @@ public class SimScenario implements Serializable {
 				PublicTransportMovement mmProto = null;
 				
 				for (int j=0; j<schedules.size(); j++) {
-					ScheduleRoute route = schedules.get(j);
+					RouteSchedule route = schedules.get(j);
 					if (route.layer_id == DTNHost.LAYER_DEFAULT) {
 						mmProto = new BusMovement(s, route.route_id, true);	
 					}else if (route.layer_id == DTNHost.LAYER_UNDERGROUND) {
@@ -501,7 +505,7 @@ public class SimScenario implements Serializable {
 					}
 					
 					mmProto.setStopMap(stopMapTranslated);
-					mmProto.setRouteStopIds(route.stops);
+					mmProto.setRouteStopIds(new ArrayList<String>(route.stops));
 					mmProto.initProto();
 					
 					for (int n=0; n<route.vehicles.size(); n++) {
@@ -524,15 +528,16 @@ public class SimScenario implements Serializable {
 		}
 	}
 
-	private HashMap<Integer, MapNode> translateStopMap(
-			HashMap<Integer, Coord> stopMap, SimMap map) {
+	private HashMap<String, MapNode> translateStopMap(
+			HashMap<String, Coord> stopMap, SimMap map) {
 		boolean mirror = map.isMirrored();
 		double xOffset = map.getOffset().getX();
 		double yOffset = map.getOffset().getY();
-		HashMap<Integer, MapNode> nodes = new HashMap<Integer, MapNode>();
+		HashMap<String, MapNode> nodes = new HashMap<String, MapNode>();
 		
-		for (int i=0; i<stopMap.size(); i++){
-			Coord c = stopMap.get(i);
+		Set<String> ids = stopMap.keySet();
+		for ( String id : ids) {
+			Coord c = stopMap.get(id);
 			Coord cc = c.clone();
 			if (mirror) {
 				cc.setLocation(c.getX(), -c.getY());
@@ -545,7 +550,7 @@ public class SimScenario implements Serializable {
 						" contained invalid coordinate " + cc + " orig: " +
 						c);
 			}
-			nodes.put(i, node);
+			nodes.put(id, node);
 		}
 		return nodes;
 	}

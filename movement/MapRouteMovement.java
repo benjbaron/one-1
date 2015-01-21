@@ -13,6 +13,8 @@ import core.SettingsError;
 import movement.map.DijkstraPathFinder;
 import movement.map.MapNode;
 import movement.map.MapRoute;
+import movement.schedule.StopDataUnit;
+import movement.schedule.VehicleSchedule;
 import core.Coord;
 import core.Settings;
 import core.SimClock;
@@ -64,12 +66,12 @@ public class MapRouteMovement extends MapBasedMovement implements
 	
 	/** the schedule of this movement model instance */
 	private VehicleSchedule schedule;
-	private HashMap<Integer, MapNode> stopMap;
+	private HashMap<String, MapNode> stopMap;
 	private boolean isScheduled = false;
 	private StopDataUnit currStop;
 	private int nextTripIndex=0;
 	private int nextStopIndex=0;
-	private List<Integer> routeStopIds;
+	private List<String> routeStopIds;
 
 	
 	/**
@@ -242,7 +244,7 @@ public class MapRouteMovement extends MapBasedMovement implements
 	}	
 	
 	public static Path getPathToNextStop(int nextTripIndex2, int nextStopIndex2,
-			VehicleSchedule schedule2, double time, HashMap<Integer, MapNode> stopMap2, 
+			VehicleSchedule schedule2, double time, HashMap<String, MapNode> stopMap2, 
 			StopDataUnit currStop2, DijkstraPathFinder pathFinder2) {
 		
 		StopDataUnit nextStopData = schedule2.trips.get(nextTripIndex2).get(nextStopIndex2);
@@ -284,7 +286,7 @@ public class MapRouteMovement extends MapBasedMovement implements
 			
 			return lastMapNode.getLocation().clone();
 		}else {
-			int index = schedule.trips.get(0).get(0).stop_id;
+			String index = schedule.trips.get(0).get(0).stop_id;
 			lastMapNode = stopMap.get(index);
 			return lastMapNode.getLocation().clone();
 		}
@@ -318,9 +320,9 @@ public class MapRouteMovement extends MapBasedMovement implements
 		}	
 	}
 	
-	public static List<MapNode> getRouteStops(List<Integer> ids, Map<Integer, MapNode> map) {
+	public static List<MapNode> getRouteStops(List<String> ids, Map<String, MapNode> map) {
 		ArrayList<MapNode> stops = new ArrayList<MapNode>();
-		for (Integer index : ids){
+		for (String index : ids){
 			stops.add(map.get(index));
 		}
 		return stops;
@@ -336,11 +338,11 @@ public class MapRouteMovement extends MapBasedMovement implements
 		return isScheduled;
 	}
 	
-	public void setStopMap(HashMap<Integer, MapNode> stopMap) {
+	public void setStopMap(HashMap<String, MapNode> stopMap) {
 		this.stopMap = stopMap;
 	}
 
-	public void setRouteStopIds(List<Integer> routeStopIds) {
+	public void setRouteStopIds(List<String> routeStopIds) {
 		this.routeStopIds = routeStopIds;
 	}
 }

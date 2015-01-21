@@ -1,14 +1,20 @@
-package movement;
+package movement.schedule;
 
-import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
-public class ScheduleRoute {
+/**
+ * 
+ * @author linzhiqi
+ * 
+ */
+public class RouteSchedule {
 	public int route_id;
 	public int layer_id;
-	public ArrayList<Integer> stops;
-	public ArrayList<VehicleSchedule> vehicles;
+	public Set<String> stops;
+	public List<VehicleSchedule> vehicles;
 
-	public ScheduleRoute() {
+	public RouteSchedule() {
 		super();
 	}
 
@@ -17,6 +23,5 @@ public class ScheduleRoute {
 		return "ScheduleRoute [route_id=" + route_id + ", layer_id=" + layer_id
 				+ ", stops=" + stops + ", vehicles=" + vehicles + "]";
 	}
-
 
 }

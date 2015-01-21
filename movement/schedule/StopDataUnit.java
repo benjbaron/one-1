@@ -1,14 +1,19 @@
-package movement;
+package movement.schedule;
 
+/**
+ * 
+ * @author linzhiqi
+ * 
+ */
 public class StopDataUnit {
-	public int stop_id;
+	public String stop_id;
 	public double arrT;
 	public double depT;
-	
+
 	public StopDataUnit() {
 		super();
 	}
-	
+
 	@Override
 	public String toString() {
 		return "StopDataUnit [stop_id=" + stop_id + ", arrT=" + arrT
