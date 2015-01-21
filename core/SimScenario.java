@@ -7,33 +7,17 @@ package core;
 import input.EventQueue;
 import input.EventQueueHandler;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
 
-import movement.BusMovement;
 import movement.MapBasedMovement;
 import movement.MapRouteMovement;
-import movement.MetroMovement;
 import movement.MovementModel;
-import movement.PublicTransportMovement;
-import movement.map.MapNode;
 import movement.map.SimMap;
-import movement.schedule.RouteSchedule;
-import movement.schedule.VehicleSchedule;
+import movement.schedule.ScheduledPublicTransportHostsFactory;
 import routing.MessageRouter;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.type.TypeFactory;
 /**
  * A simulation scenario used for getting and storing the settings of a
  * simulation run.
@@ -269,6 +253,10 @@ public class SimScenario implements Serializable {
 	public SimMap getMap() {
 		return this.simMap;
 	}
+	
+	public void setMap(SimMap map) {
+		this.simMap = map;
+	}
 
 	/**
 	 * Adds a new connection listener for all nodes
@@ -324,71 +312,14 @@ public class SimScenario implements Serializable {
 	 */
 	public List<ApplicationListener> getApplicationListeners() {
 		return this.appListeners;
-	}
-	
-	public HashMap<String, Coord> loadStopMap() {
-		Settings s = new Settings(MapRouteMovement.SCHEDULED_MOVEMENT_NS_S);
-		if (!s.contains(MapRouteMovement.STOP_FILE_S)) {
-			return null;
-		}else {	
-			String path = s.getSetting(MapRouteMovement.STOP_FILE_S);
-			return loadStopMap(path);	
-		}	
-	}
-	
-	public static HashMap<String, Coord> loadStopMap(String path) {
-		HashMap<String, Coord> stopMap = null;
-		ObjectMapper mapper = new ObjectMapper();
-		
-		try {
-			stopMap = mapper.readValue(new FileReader(new File(path)), 
-					    new TypeReference<HashMap<String, Coord>>(){});
-		} catch (JsonParseException e) {
-			System.err.println("file " + path + " failed to be parsed.");
-			e.printStackTrace();
-			System.exit(-1);
-		} catch (JsonMappingException e) {
-			System.err.println("file " + path + " failed to be parsed.");
-			e.printStackTrace();
-			System.exit(-1);
-		} catch (FileNotFoundException e) {
-			System.err.println("file " + path + " is not found.");
-			System.exit(-1);
-		} catch (IOException e) {
-			e.printStackTrace();
-			System.exit(-1);
-		}
-		return stopMap;
-	}
-
-	@SuppressWarnings("unchecked")
-	public ArrayList<RouteSchedule> loadSchedules(String scheduleFilePath) {
-		ArrayList<RouteSchedule> ret = null;
-		ObjectMapper mapper = new ObjectMapper();
-		TypeFactory typeFactory = mapper.getTypeFactory();
-		try {
-			ret = (ArrayList<RouteSchedule>)mapper.readValue(new FileReader(new File(scheduleFilePath)), 
-					typeFactory.constructCollectionType(ArrayList.class, RouteSchedule.class));
-		}catch (FileNotFoundException e) {
-			System.err.println("file " + scheduleFilePath + " is not found.");
-			System.exit(-1);
-		}catch (IOException e) {
-			System.err.println("file " + scheduleFilePath + " failed to be parsed.");
-			e.printStackTrace();
-			System.exit(-1);	
-		}
-		
-		return ret;
-	}
+	}	
 	
 	/**
 	 * Creates hosts for the scenario
 	 */
 	protected void createHosts() {
 		this.hosts = new ArrayList<DTNHost>();
-		HashMap<String, Coord> stopMap = null;
-		HashMap<String, MapNode> stopMapTranslated = null;
-		stopMap = loadStopMap();
+		ScheduledPublicTransportHostsFactory scheduledFactory = null; 
 		
 		for (int i=1; i<=nrofGroups; i++) {
 			List<NetworkInterface> interfaces = 
@@ -399,16 +330,6 @@ public class SimScenario implements Serializable {
 			int nrofHosts = s.getInt(NROF_HOSTS_S);
 			int nrofInterfaces = s.getInt(NROF_INTERF_S);
 			int appCount;
-			
-			// variables for scheduled vehicle
-			boolean isScheduled = false;
-			ArrayList<RouteSchedule> schedules = null;
-			
-			if (s.contains(MapRouteMovement.IS_SCHEDULED_S) && s.getBoolean(MapRouteMovement.IS_SCHEDULED_S)) {
-				isScheduled = true;
-				String scheduleFilePath = s.getSetting(MapRouteMovement.SCHEDULE_FILE_S);
-				schedules = loadSchedules(scheduleFilePath);
-			}
 			
 			MessageRouter mRouterProto = 
 				(MessageRouter)s.createIntializedObject(ROUTING_PACKAGE + 
@@ -460,7 +381,18 @@ public class SimScenario implements Serializable {
 				}
 			}
 			
-			if (!isScheduled) {
+			// check if this group is for scheduled public transport hosts
+			boolean isScheduledPublicTransport = false;	
+			String mmName = s.getSetting(MOVEMENT_MODEL_S);
+			if ((mmName.equals("BusMovement") || mmName.equals("MetroMovement")) 
+				&& s.getBoolean(MapRouteMovement.IS_SCHEDULED_S)) {
+				isScheduledPublicTransport = true;
+				if (scheduledFactory == null) {
+					scheduledFactory = new ScheduledPublicTransportHostsFactory();
+				}
+			}
+			
+			if (!isScheduledPublicTransport) {
 				// creates prototypes of MessageRouter and MovementModel
 				MovementModel mmProto = 
 					(MovementModel)s.createIntializedObject(MM_PACKAGE + 
@@ -483,42 +415,15 @@ public class SimScenario implements Serializable {
 							mmProto, true, mRouterProto);
 					hosts.add(host);
 				}
+				
 			}else {
-				if (schedules==null || schedules.isEmpty()) {
-					throw new SettingsError("schedule data is empty.");
-				}
 				
-				PublicTransportMovement mmProto = null;
+				List<DTNHost> scheduledTransportHosts = scheduledFactory
+							.buildHosts(this, s, this.messageListeners, this.movementListeners, 
+							gid, interfaces, mRouterProto);
 				
-				for (int j=0; j<schedules.size(); j++) {
-					RouteSchedule route = schedules.get(j);
-					if (route.layer_id == DTNHost.LAYER_DEFAULT) {
-						mmProto = new BusMovement(s, route.route_id, true);	
-					}else if (route.layer_id == DTNHost.LAYER_UNDERGROUND) {
-						mmProto = new MetroMovement(s, route.route_id, true);
-					}else {
-						throw new SettingsError("layer_id of schedule route-" + route.route_id + " is invalid.");
-					}
-					
-					if (stopMapTranslated == null) {
-						stopMapTranslated = translateStopMap(stopMap, mmProto.getMap());
-					}
-					
-					mmProto.setStopMap(stopMapTranslated);
-					mmProto.setRouteStopIds(new ArrayList<String>(route.stops));
-					mmProto.initProto();
-					
-					for (int n=0; n<route.vehicles.size(); n++) {
-						VehicleSchedule vehicle = route.vehicles.get(n);
-						ModuleCommunicationBus comBus = new ModuleCommunicationBus();
-						PublicTransportMovement mm = mmProto.replicate();
-						mm.setSchedule(vehicle);
-						
-						DTNHost host = new DTNHost(this.messageListeners, 
-								this.movementListeners,	gid, interfaces, comBus, 
-								mm, false, mRouterProto);
-						hosts.add(host);
-					}
+				for (DTNHost host : scheduledTransportHosts) {
+					hosts.add(host);
 				}
 				
 			}
@@ -526,33 +431,6 @@ public class SimScenario implements Serializable {
 
 			
 		}
-	}
-
-	private HashMap<String, MapNode> translateStopMap(
-			HashMap<String, Coord> stopMap, SimMap map) {
-		boolean mirror = map.isMirrored();
-		double xOffset = map.getOffset().getX();
-		double yOffset = map.getOffset().getY();
-		HashMap<String, MapNode> nodes = new HashMap<String, MapNode>();
-		
-		Set<String> ids = stopMap.keySet();
-		for ( String id : ids) {
-			Coord c = stopMap.get(id);
-			Coord cc = c.clone();
-			if (mirror) {
-				cc.setLocation(c.getX(), -c.getY());
-			}
-			cc.translate(xOffset, yOffset);
-			
-			MapNode node = map.getNodeByCoord(cc);
-			if (node == null) {				
-				throw new SettingsError("stop file for scheduled transport" +
-						" contained invalid coordinate " + cc + " orig: " +
-						c);
-			}
-			nodes.put(id, node);
-		}
-		return nodes;
 	}
 
 	/**
