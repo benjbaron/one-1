@@ -100,7 +100,7 @@ public class MapRouteMovement extends MapBasedMovement implements
 		}			
 	}
 	
-	public MapRouteMovement(Settings settings, boolean isScheduled) {
+	public MapRouteMovement(Settings settings, boolean isScheduled, List<String> stopIDList) {
 		super(settings);
 		pathFinder = new DijkstraPathFinder(getOkMapNodeTypes());
 		if (!isScheduled) {
@@ -123,6 +123,7 @@ public class MapRouteMovement extends MapBasedMovement implements
 			}			
 		}else {
 			this.isScheduled = isScheduled;
+			this.routeStopIds = stopIDList;
 		}
 		
 	}

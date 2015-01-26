@@ -5,28 +5,35 @@ import java.util.List;
 
 import movement.map.MapNode;
 import core.Coord;
+import core.DTNHost;
 import core.Settings;
 
-public abstract class PublicTransportMovement extends MapRouteMovement {
+public class PublicTransportMovement extends MapRouteMovement {
 
+	public static final String LAYER_S = "layerID";
+	
 	protected PublicTransportControlSystem controlSystem;
 	protected int id;
 	protected static int nextID = 0;
 	protected boolean startMode;
 	protected List<Coord> stops;
+	protected int layerID = DTNHost.LAYER_DEFAULT;
 	
 	/**
-	 * Creates a new instance of BusMovement
+	 * Creates a new instance of PublicTransportMovement
 	 * @param settings
 	 */
 	public PublicTransportMovement(Settings settings) {
 		super(settings);
 		int bcs = settings.getInt(PublicTransportControlSystem.BUS_CONTROL_SYSTEM_NR);
+		this.layerID = settings.getInt(PublicTransportMovement.LAYER_S);
 		controlSystem = PublicTransportControlSystem.getBusControlSystem(bcs);
 	}
 	
-	public PublicTransportMovement(Settings settings, int bcs, boolean isScheduled) {
-		super(settings, isScheduled);
+	public PublicTransportMovement(Settings settings, int bcs, int layerID, 
+			List<String> stopIDList, boolean isScheduled) {
+		super(settings, isScheduled, stopIDList);
+		this.layerID = layerID;
 		controlSystem = PublicTransportControlSystem.getBusControlSystem(bcs);
 	}
 	
@@ -38,6 +45,7 @@ public abstract class PublicTransportMovement extends MapRouteMovement {
 		super(proto);
 		this.controlSystem = proto.controlSystem;
 		this.id = nextID++;
+		this.layerID = proto.layerID;
 		controlSystem.registerBus(this);
 		startMode = true;
 	}
@@ -48,7 +56,7 @@ public abstract class PublicTransportMovement extends MapRouteMovement {
 		controlSystem.setMap(super.getMap());
 		this.id = nextID++;
 		controlSystem.registerBus(this);
-		controlSystem.setLayer(this.getLayer());
+		controlSystem.setLayer(this.layerID);
 		startMode = true;
 		stops = new LinkedList<Coord>();
 		List<MapNode> stopNodes = super.getStops();
@@ -64,7 +72,9 @@ public abstract class PublicTransportMovement extends MapRouteMovement {
 		return (super.getInitialLocation()).clone();
 	}
 	
-	abstract protected void setLayer();
+	public void setLayer() {
+		getHost().setLayer(this.layerID);
+	}
 
 	@Override
 	public Path getPath() {
@@ -80,7 +90,9 @@ public abstract class PublicTransportMovement extends MapRouteMovement {
 	}
 
 	@Override
-	abstract public PublicTransportMovement replicate();
+	public PublicTransportMovement replicate() {
+		return new PublicTransportMovement(this);
+	}
 
 	/**
 	 * Returns unique ID of the bus
@@ -89,6 +101,5 @@ public abstract class PublicTransportMovement extends MapRouteMovement {
 	public int getID() {
 		return id;
 	}
-	
-	abstract public int getLayer();
+
 }

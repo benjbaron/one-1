@@ -15,9 +15,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 
-import movement.BusMovement;
 import movement.MapRouteMovement;
-import movement.MetroMovement;
 import movement.PublicTransportMovement;
 import movement.map.MapNode;
 import movement.map.SimMap;
@@ -37,8 +35,8 @@ import core.SimScenario;
  * the factory class for creating scheduled public transport hosts
  */
 public class ScheduledPublicTransportHostsFactory {
-	HashMap<String, Coord> stopMap = null;
-	HashMap<String, MapNode> stopMapTranslated = null;
+	private HashMap<String, Coord> stopMap = null;
+	private HashMap<String, MapNode> stopMapTranslated = null;
 	
 	public List<DTNHost> buildHosts(SimScenario scenario, Settings s, 
 			List<MessageListener> msgLs, List<MovementListener> movLs,
@@ -62,11 +60,10 @@ public class ScheduledPublicTransportHostsFactory {
 		
 		for (int j=0; j<schedules.size(); j++) {
 			RouteSchedule route = schedules.get(j);
-			if (route.layer_id == DTNHost.LAYER_DEFAULT) {
-				mmProto = new BusMovement(s, route.route_id, true);	
-			}else if (route.layer_id == DTNHost.LAYER_UNDERGROUND) {
-				mmProto = new MetroMovement(s, route.route_id, true);
-			}else {
+			List<String> stopIDList = new ArrayList<String>(route.stops);
+			if (route.layer_id == DTNHost.LAYER_DEFAULT || route.layer_id == DTNHost.LAYER_UNDERGROUND) {
+				mmProto = new PublicTransportMovement(s, route.route_id, route.layer_id, stopIDList, true);	
+			} else {
 				throw new SettingsError("layer_id of schedule route-" + route.route_id + " is invalid.");
 			}
 			
@@ -75,7 +72,6 @@ public class ScheduledPublicTransportHostsFactory {
 			}
 			
 			mmProto.setStopMap(stopMapTranslated);
-			mmProto.setRouteStopIds(new ArrayList<String>(route.stops));
 			mmProto.initProto();
 			
 			for (int n=0; n<route.vehicles.size(); n++) {
