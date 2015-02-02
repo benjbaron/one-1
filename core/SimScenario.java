@@ -402,8 +402,6 @@ public class SimScenario implements Serializable {
 					this.simMap = ((MapBasedMovement)mmProto).getMap();
 				}
 				
-				mmProto.initProto();
-				
 				// creates hosts of ith group
 				for (int j=0; j<nrofHosts; j++) {					
 					ModuleCommunicationBus comBus = new ModuleCommunicationBus();
@@ -419,7 +417,7 @@ public class SimScenario implements Serializable {
 			}else {
 				
 				List<DTNHost> scheduledTransportHosts = scheduledFactory
-							.buildHosts(this, s, this.messageListeners, this.movementListeners, 
+							.buildHostsForGroup(this, s, this.messageListeners, this.movementListeners, 
 							gid, interfaces, mRouterProto);
 				
 				for (DTNHost host : scheduledTransportHosts) {

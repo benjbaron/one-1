@@ -107,11 +107,11 @@ public class PublicTransportTravellerMovementTest extends TestCase {
 		
 		//move() is called again
 		assertFalse(travellerM.isReady());
-		this.assertNull(travellerM.getPath());
+		assertNull(travellerM.getPath());
 		assertEquals(0d,travellerM.nextPathAvailable());
 		//move() called again
 		assertFalse(travellerM.isReady());
-		this.assertNull(travellerM.getPath());
+		assertNull(travellerM.getPath());
 		assertEquals(0d,travellerM.nextPathAvailable());
 		
 		//vehicle comes at the start stop
@@ -137,11 +137,11 @@ public class PublicTransportTravellerMovementTest extends TestCase {
 		assertEquals(0d,travellerM.nextPathAvailable());
 		//move() called again
 		assertFalse(travellerM.isReady());
-		this.assertNull(travellerM.getPath());
+		assertNull(travellerM.getPath());
 		assertEquals(0d,travellerM.nextPathAvailable());
 		//move() called again
 		assertFalse(travellerM.isReady());
-		this.assertNull(travellerM.getPath());
+		assertNull(travellerM.getPath());
 		assertEquals(0d,travellerM.nextPathAvailable());
 		
 		//vehicle arrives at the second stop
@@ -166,7 +166,7 @@ public class PublicTransportTravellerMovementTest extends TestCase {
 		
 		//wait for vehicle's signal again
 		assertEquals(0d,travellerM.nextPathAvailable());	
-		this.assertNull(travellerM.getPath());
+		assertNull(travellerM.getPath());
 		assertEquals(0d,travellerM.nextPathAvailable());		
 		
 		//vehicle arrives at the third stop
@@ -186,7 +186,7 @@ public class PublicTransportTravellerMovementTest extends TestCase {
 		
 		//wait for vehicle's signal again
 		assertEquals(0d,travellerM.nextPathAvailable());	
-		this.assertNull(travellerM.getPath());
+		assertNull(travellerM.getPath());
 		assertEquals(0d,travellerM.nextPathAvailable());		
 				
 		//vehicle arrives at the end stop, host.setLayer() will be called

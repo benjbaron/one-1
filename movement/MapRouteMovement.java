@@ -100,7 +100,7 @@ public class MapRouteMovement extends MapBasedMovement implements
 		}			
 	}
 	
-	public MapRouteMovement(Settings settings, boolean isScheduled, List<String> stopIDList) {
+	public MapRouteMovement(Settings settings, boolean isScheduled, VehicleSchedule schedule, List<String> stopIDList, HashMap<String, MapNode> stopMapTranslated) {
 		super(settings);
 		pathFinder = new DijkstraPathFinder(getOkMapNodeTypes());
 		if (!isScheduled) {
@@ -124,6 +124,10 @@ public class MapRouteMovement extends MapBasedMovement implements
 		}else {
 			this.isScheduled = isScheduled;
 			this.routeStopIds = stopIDList;
+			this.stopMap = stopMapTranslated;
+			this.schedule = schedule;
+			nextTripIndex = 0;
+			nextStopIndex = 0;
 		}
 		
 	}
@@ -330,20 +334,11 @@ public class MapRouteMovement extends MapBasedMovement implements
 	}
 	
 	public void setSchedule(VehicleSchedule schedule) {
-		this.schedule = schedule;
-		nextTripIndex = 0;
-		nextStopIndex = 0;
+		
 	}
 
 	public boolean isScheduled() {
 		return isScheduled;
 	}
-	
-	public void setStopMap(HashMap<String, MapNode> stopMap) {
-		this.stopMap = stopMap;
-	}
 
-	public void setRouteStopIds(List<String> routeStopIds) {
-		this.routeStopIds = routeStopIds;
-	}
 }

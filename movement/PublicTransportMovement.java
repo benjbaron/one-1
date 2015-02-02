@@ -1,9 +1,11 @@
 package movement;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
 import movement.map.MapNode;
+import movement.schedule.VehicleSchedule;
 import core.Coord;
 import core.DTNHost;
 import core.Settings;
@@ -16,7 +18,6 @@ public class PublicTransportMovement extends MapRouteMovement {
 	protected int id;
 	protected static int nextID = 0;
 	protected boolean startMode;
-	protected List<Coord> stops;
 	protected int layerID = DTNHost.LAYER_DEFAULT;
 	
 	/**
@@ -28,13 +29,26 @@ public class PublicTransportMovement extends MapRouteMovement {
 		int bcs = settings.getInt(PublicTransportControlSystem.BUS_CONTROL_SYSTEM_NR);
 		this.layerID = settings.getInt(PublicTransportMovement.LAYER_S);
 		controlSystem = PublicTransportControlSystem.getBusControlSystem(bcs);
+		this.id = nextID++;
+		startMode = true;
+		LinkedList<Coord> stops = new LinkedList<Coord>();
+		List<MapNode> stopNodes = super.getStops();
+		for (MapNode node : stopNodes) {
+			stops.add(node.getLocation().clone());
+		}
+		controlSystem.setMap(super.getMap());
+		controlSystem.registerBus(this);
+		controlSystem.setLayer(this.layerID);
+		controlSystem.setBusStops(stops);
 	}
 	
-	public PublicTransportMovement(Settings settings, int bcs, int layerID, 
-			List<String> stopIDList, boolean isScheduled) {
-		super(settings, isScheduled, stopIDList);
+	public PublicTransportMovement(Settings settings, PublicTransportControlSystem bcs, int layerID, VehicleSchedule schedule,
+			List<String> stopIDList, HashMap<String, MapNode> stopMap, boolean isScheduled) {
+		super(settings, isScheduled, schedule, stopIDList, stopMap);
 		this.layerID = layerID;
-		controlSystem = PublicTransportControlSystem.getBusControlSystem(bcs);
+		controlSystem = bcs;
+		this.id = nextID++;
+		startMode = true;
 	}
 	
 	/**
@@ -48,22 +62,6 @@ public class PublicTransportMovement extends MapRouteMovement {
 		this.layerID = proto.layerID;
 		controlSystem.registerBus(this);
 		startMode = true;
-	}
-	
-	// always invoked right after the prototype instance is built up
-	@Override
-	public void initProto() {
-		controlSystem.setMap(super.getMap());
-		this.id = nextID++;
-		controlSystem.registerBus(this);
-		controlSystem.setLayer(this.layerID);
-		startMode = true;
-		stops = new LinkedList<Coord>();
-		List<MapNode> stopNodes = super.getStops();
-		for (MapNode node : stopNodes) {
-			stops.add(node.getLocation().clone());
-		}
-		controlSystem.setBusStops(stops);
 	}
 	
 	@Override
