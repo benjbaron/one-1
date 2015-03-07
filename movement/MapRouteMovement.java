@@ -165,6 +165,10 @@ public class MapRouteMovement extends MapBasedMovement implements
 	
 	@Override
 	protected double generateWaitTime() {
+		if (!isScheduled) {	
+			return super.generateWaitTime();
+		}
+		
 		double ret = 0.0;
 		if (isLastStop(nextTripIndex, nextStopIndex, schedule)) {
 			// this is already the last stop of the schedule
@@ -186,8 +190,11 @@ public class MapRouteMovement extends MapBasedMovement implements
 //				" for stop-"+schedule.trips.get(nextTripIndex).get(nextStopIndex).stop_id);
 //				}
 			nextStopIndex++;
-			assert ret>=-1:ret + " sim time > departure time of next stop for vehicle-" + 
-			schedule.vehicle_id+". Do not continue, schedule after this is screwed up.";
+			if(ret<0){
+				System.out.println("Sim time > departure time of next stop for vehicle-" + 
+						schedule.vehicle_id +", diff="+ret+" secondes.");
+				ret = 0;
+			}
 		} 
 		
 		return ret;
@@ -262,7 +269,12 @@ public class MapRouteMovement extends MapBasedMovement implements
 			System.out.println("vehicle's departure is late from schedule for " + 
 					(SimClock.getTime()-currStop2.depT) + "seconds.");
 		}
-		Path p = new Path(distance/(nextStopData.arrT - SimClock.getTime()));
+		double timeDiff = nextStopData.arrT - SimClock.getTime();
+		if(timeDiff<=0){
+			assert timeDiff>-3;
+			timeDiff = 29;
+		}
+		Path p = new Path(distance/timeDiff);
 		for (MapNode node : nodePath) { 
 			// create a Path from the shortest path
 			p.addWaypoint(node.getLocation());

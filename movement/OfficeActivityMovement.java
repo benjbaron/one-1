@@ -171,6 +171,7 @@ public class OfficeActivityMovement extends MapBasedMovement implements
 		while((line = reader.readLine()) != null){
 			ret.add(Integer.parseInt(line));
 		}
+		reader.close();
 	}
 
 	/**
