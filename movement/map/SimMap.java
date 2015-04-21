@@ -155,6 +155,7 @@ public class SimMap implements Serializable {
 		}
 		minBound = new Coord(minX, minY);
 		maxBound = new Coord(maxX, maxY);
+		System.out.println("bound(minx-miny/maxx-maxy): " + minX +"-" +minY +"/"+maxX+"-" +maxY);
 	}
 	
 	/**

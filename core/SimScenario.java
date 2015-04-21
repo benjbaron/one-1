@@ -384,7 +384,7 @@ public class SimScenario implements Serializable {
 			// check if this group is for scheduled public transport hosts
 			boolean isScheduledPublicTransport = false;	
 			String mmName = s.getSetting(MOVEMENT_MODEL_S);
-			if ((mmName.equals("PublicTransportMovement")) 
+			if ((mmName.equals("PublicTransportMovement")) && s.contains(MapRouteMovement.IS_SCHEDULED_S)
 				&& s.getBoolean(MapRouteMovement.IS_SCHEDULED_S)) {
 				isScheduledPublicTransport = true;
 				if (scheduledFactory == null) {

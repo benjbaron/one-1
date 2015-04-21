@@ -258,23 +258,36 @@ public class MapRouteMovement extends MapBasedMovement implements
 	public static Path getPathToNextStop(int nextTripIndex2, int nextStopIndex2,
 			VehicleSchedule schedule2, double time, HashMap<String, MapNode> stopMap2, 
 			StopDataUnit currStop2, DijkstraPathFinder pathFinder2) {
+		if(nextTripIndex2>=schedule2.trips.size()){
+			System.out.println("problem vehichle-"+ schedule2.vehicle_id);
+		}
+		if(nextStopIndex2>=schedule2.trips.get(nextTripIndex2).size()){
+			System.out.println("problem vehichle-"+ schedule2.vehicle_id + " problem trip index-" + nextTripIndex2);
+		}
 		
 		StopDataUnit nextStopData = schedule2.trips.get(nextTripIndex2).get(nextStopIndex2);
 		MapNode to = stopMap2.get(nextStopData.stop_id);
 		MapNode from = stopMap2.get(currStop2.stop_id);
-		
+		assert to!=null:nextStopData.stop_id;
 		List<MapNode> nodePath = pathFinder2.getShortestPath(from, to);
 		double distance = getTotalDistance(nodePath);
 		if (SimClock.getTime()!=currStop2.depT) {
-			System.out.println("vehicle's departure is late from schedule for " + 
+			System.out.println("vehicle-"+schedule2.vehicle_id+"'s departure is late from schedule for " + 
 					(SimClock.getTime()-currStop2.depT) + "seconds.");
 		}
 		double timeDiff = nextStopData.arrT - SimClock.getTime();
 		if(timeDiff<=0){
-			assert timeDiff>-3;
-			timeDiff = 29;
+			assert timeDiff>-60:"timeDiff:"+timeDiff+" vehcileid-"+schedule2.vehicle_id;
+			// assume average speed is around 60km/h(16.7m/s)
+			timeDiff = distance/16.7;
 		}
-		Path p = new Path(distance/timeDiff);
+		double speed = distance/timeDiff;
+		// if speed>120km/h(33.3m/s), very likely the map missing some road which is used by the transportation system
+		if(speed > 33.3){
+			System.out.println("speed " + speed*3.6 + "km/h is required for vehicle-"+schedule2.vehicle_id+" between stop-" + 
+					currStop2.stop_id + " to stop-" + nextStopData.stop_id);
+		}
+		Path p = new Path(speed);
 		for (MapNode node : nodePath) { 
 			// create a Path from the shortest path
 			p.addWaypoint(node.getLocation());

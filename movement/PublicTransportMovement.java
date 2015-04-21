@@ -27,7 +27,9 @@ public class PublicTransportMovement extends MapRouteMovement {
 	public PublicTransportMovement(Settings settings) {
 		super(settings);
 		int bcs = settings.getInt(PublicTransportControlSystem.BUS_CONTROL_SYSTEM_NR);
-		this.layerID = settings.getInt(PublicTransportMovement.LAYER_S);
+		if(settings.contains(PublicTransportMovement.LAYER_S)){
+			this.layerID = settings.getInt(PublicTransportMovement.LAYER_S);
+		}
 		controlSystem = PublicTransportControlSystem.getBusControlSystem(bcs);
 		this.id = nextID++;
 		startMode = true;
