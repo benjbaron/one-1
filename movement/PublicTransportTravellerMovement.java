@@ -341,6 +341,7 @@ public class PublicTransportTravellerMovement extends MapBasedMovement implement
 			setState(STATE_READY);
 		} else {
 			takeBus = true;
+			setState(STATE_INITIAL);
 		}
 		
 		this.startBusStop = closestToNode;
