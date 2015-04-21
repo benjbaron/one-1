@@ -334,7 +334,6 @@ public class OfficeActivityMovement extends MapBasedMovement implements
 
 	private void setHostLayer(int floor) {
 		this.getHost().setLayer(floor);
-		System.out.println("at office floor:" + officeFloor);
 	}
 
 }
