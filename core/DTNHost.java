@@ -397,7 +397,7 @@ public class DTNHost implements Comparable<DTNHost> {
 		double possibleMovement;
 		double distance;
 		double dx, dy;
-
+	
 		if (!isMovementActive() || SimClock.getTime() < this.nextTimeToMove) {
 			return; 
 		}
@@ -417,6 +417,7 @@ public class DTNHost implements Comparable<DTNHost> {
 			if (!setNextWaypoint()) { // get a new waypoint
 				return; // no more waypoints left
 			}
+			possibleMovement = timeIncrement * speed;
 			distance = this.location.distance(this.destination);
 		}
 
