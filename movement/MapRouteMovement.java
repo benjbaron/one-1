@@ -282,6 +282,9 @@ public class MapRouteMovement extends MapBasedMovement implements
 			timeDiff = distance/16.7;
 		}
 		double speed = distance/timeDiff;
+		if(distance==0 && timeDiff==0){
+			speed = 0;
+		}
 		// if speed>120km/h(33.3m/s), very likely the map missing some road which is used by the transportation system
 		if(speed > 33.3){
 			System.out.println("speed " + speed*3.6 + "km/h is required for vehicle-"+schedule2.vehicle_id+" between stop-" + 
