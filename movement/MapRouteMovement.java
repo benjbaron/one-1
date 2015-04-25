@@ -164,15 +164,18 @@ public class MapRouteMovement extends MapBasedMovement implements
 	}
 	
 	@Override
-	protected double generateWaitTime() {
+	public double generateWaitTime() {
 		if (!isScheduled) {	
 			return super.generateWaitTime();
 		}
 		
 		double ret = 0.0;
-		if (isLastStop(nextTripIndex, nextStopIndex, schedule)) {
-			// this is already the last stop of the schedule
+		if (passedLastStop(nextTripIndex, nextStopIndex, schedule)){
 			ret = Double.MAX_VALUE;	
+		} else if (isLastStop(nextTripIndex, nextStopIndex, schedule)) {
+			// this is already the last stop of the schedule
+			ret = 0;
+			nextTripIndex++;
 		} else if (nextTripIndex==0 && nextStopIndex==0) {
 			// before start
 			currStop = schedule.trips.get(0).get(0);
@@ -191,8 +194,8 @@ public class MapRouteMovement extends MapBasedMovement implements
 //				}
 			nextStopIndex++;
 			if(ret<0){
-				System.out.println("Sim time > departure time of next stop for vehicle-" + 
-						schedule.vehicle_id +", diff="+ret+" secondes.");
+//				System.out.println("Sim time > departure time of next stop for vehicle-" + 
+//						schedule.vehicle_id +", diff="+ret+" secondes.");
 				ret = 0;
 			}
 		} 
@@ -204,6 +207,15 @@ public class MapRouteMovement extends MapBasedMovement implements
 			VehicleSchedule schedule2) {
 		if (nextTripIndex2==(schedule2.trips.size()-1) 
 				&& nextStopIndex2==(schedule2.trips.get(nextTripIndex2).size()-1)) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
+	public static boolean passedLastStop(int nextTripIndex2, int nextStopIndex2,
+			VehicleSchedule schedule2) {
+		if (nextTripIndex2>=schedule2.trips.size()) {
 			return true;
 		} else {
 			return false;
@@ -241,28 +253,29 @@ public class MapRouteMovement extends MapBasedMovement implements
 			
 			return p;
 		}else {
-			if(this.host.getAddress()==0){
-				System.out.println("host-"+this.host.getAddress()+" getPath is called at "+SimClock.getTime()+
-						" for stop-"+schedule.trips.get(nextTripIndex).get(nextStopIndex).stop_id +" currStop-"+currStop.stop_id);
-			}
-			
 			Path p = getPathToNextStop(nextTripIndex, nextStopIndex, schedule, 
 					SimClock.getTime(), stopMap, currStop, pathFinder);
-			currStop = schedule.trips.get(nextTripIndex).get(nextStopIndex);
-			lastMapNode = stopMap.get(currStop.stop_id);
+			if(p!=null){
+				currStop = schedule.trips.get(nextTripIndex).get(nextStopIndex);
+				lastMapNode = stopMap.get(currStop.stop_id);
+			}
 			return p;
 		}
 		
 	}	
 	
+	/*
+	 * return null when no more trips
+	 */
 	public static Path getPathToNextStop(int nextTripIndex2, int nextStopIndex2,
 			VehicleSchedule schedule2, double time, HashMap<String, MapNode> stopMap2, 
 			StopDataUnit currStop2, DijkstraPathFinder pathFinder2) {
 		if(nextTripIndex2>=schedule2.trips.size()){
-			System.out.println("problem vehichle-"+ schedule2.vehicle_id);
+			return null;
 		}
 		if(nextStopIndex2>=schedule2.trips.get(nextTripIndex2).size()){
 			System.out.println("problem vehichle-"+ schedule2.vehicle_id + " problem trip index-" + nextTripIndex2);
+			return null;
 		}
 		
 		StopDataUnit nextStopData = schedule2.trips.get(nextTripIndex2).get(nextStopIndex2);
@@ -271,10 +284,10 @@ public class MapRouteMovement extends MapBasedMovement implements
 		assert to!=null:nextStopData.stop_id;
 		List<MapNode> nodePath = pathFinder2.getShortestPath(from, to);
 		double distance = getTotalDistance(nodePath);
-		if (SimClock.getTime()!=currStop2.depT) {
-			System.out.println("vehicle-"+schedule2.vehicle_id+"'s departure is late from schedule for " + 
-					(SimClock.getTime()-currStop2.depT) + "seconds.");
-		}
+//		if (SimClock.getTime()!=currStop2.depT) {
+//			System.out.println("vehicle-"+schedule2.vehicle_id+"'s departure is late from schedule for " + 
+//					(SimClock.getTime()-currStop2.depT) + "seconds.");
+//		}
 		double timeDiff = nextStopData.arrT - SimClock.getTime();
 		if(timeDiff<=0){
 			assert timeDiff>-60:"timeDiff:"+timeDiff+" vehcileid-"+schedule2.vehicle_id;

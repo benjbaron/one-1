@@ -57,19 +57,25 @@ public class PublicTransportControlSystem {
 	 * @param busID Unique identifier of the bus
 	 * @param busStop Coordinates of the bus stop
 	 * @param nextPath The path to the next stop
+	 * @param isAnyMorePath 
 	 */
-	public void busHasStopped(int busID, Coord busStop, Path nextPath) {
+	public void busHasStopped(int busID, Coord busStop, Path nextPath, boolean isAnyMorePath) {
 		Iterator<PublicTransportTravellerMovement> iterator = travellers.values().
 			iterator();
 		while (iterator.hasNext()) {
 			PublicTransportTravellerMovement traveller = (PublicTransportTravellerMovement)iterator.
 				next();
 			if (traveller.getLocation() != null) {
+				// if traveler's getPath() is called before vehicle's, there should be 0.1s difference
 				if ((traveller.getLocation()).equals(busStop)) {
 					if (traveller.getState() == PublicTransportTravellerMovement.
 							STATE_WAITING) {
-						Path path = new Path(nextPath);
-						traveller.enterBus(path);
+						if(isAnyMorePath){
+							Path path = new Path(nextPath);
+							traveller.enterBus(path);
+						}else{
+							traveller.offBoardNow();
+						}
 					} 
 				}
 			}

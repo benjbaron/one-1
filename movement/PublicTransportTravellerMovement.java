@@ -13,6 +13,7 @@ import movement.map.SimMap;
 import core.Coord;
 import core.DTNHost;
 import core.Settings;
+import core.SimClock;
 
 /**
  * 
@@ -392,5 +393,31 @@ public class PublicTransportTravellerMovement extends MapBasedMovement implement
 	
 	public void setState(int state){
 		this.state = state;
+	}
+
+	/*
+	 * detach passengers already onboard from public transport vehicle. And prevent passengers
+	 * waiting at stop to attach.
+	 * This is necessary for real-world scheduled vehicles that might stop serving at any time point.
+	 * Then when the vehicle is at the last stop and finds there is no more path it will produce,
+	 * it should indicate that via the busHasStopped(), and in turn the control system will call 
+	 * offBoadNow() instead of enterBus()
+	 */
+	public void offBoardNow() {
+		if (getState() != STATE_WAITING){
+			return;
+		}
+		
+		if (startBusStop != null && endBusStop != null) {
+			if (location.equals(startBusStop)) {
+				//do not get onboard, keep waiting
+			} else {
+				//get off now
+				setState(STATE_READY);
+				latestBusStop = location.clone();
+				getHost().setLayer(DTNHost.LAYER_DEFAULT);	
+			}
+			return;
+		}
 	}
 }

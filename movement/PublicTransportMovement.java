@@ -9,6 +9,7 @@ import movement.schedule.VehicleSchedule;
 import core.Coord;
 import core.DTNHost;
 import core.Settings;
+import core.SimClock;
 
 public class PublicTransportMovement extends MapRouteMovement {
 
@@ -78,12 +79,16 @@ public class PublicTransportMovement extends MapRouteMovement {
 
 	@Override
 	public Path getPath() {
+		boolean isAnyMorePath = true;
 		Coord lastLocation = (super.getLastLocation()).clone();
 		Path path = super.getPath();
+		if(path == null){
+			isAnyMorePath = false;
+		}
 		// looks like random transport vehicles don't take passenger at starting stop. No change to it.
 		// for scheduled transport, vehicles do take passengers at starting stop. -Zhiqi
 		if (!startMode || isScheduled()) {
-			controlSystem.busHasStopped(id, lastLocation, path);
+			controlSystem.busHasStopped(id, lastLocation, path, isAnyMorePath);
 		}
 		startMode = false;
 		return path;
