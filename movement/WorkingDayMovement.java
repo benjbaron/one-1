@@ -187,7 +187,9 @@ public class WorkingDayMovement extends ExtendedMovementModel {
 		eveningActivityMovement.setHost(host);
 		carMM.setHost(host);
 	}
-	
-	
+
+	public TransportMovement getMovementUsedForTransfers() {
+		return movementUsedForTransfers;
+	}
 	
 }

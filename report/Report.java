@@ -18,6 +18,7 @@ import core.Settings;
 import core.SimClock;
 import core.SimError;
 import core.SimScenario;
+import core.World;
 
 /**
  * Abstract superclass for all reports. All settings defined in this class
@@ -67,6 +68,7 @@ public abstract class Report {
 	private double lastReportTime;
 	private String outFileName;
 	private String scenarioName;
+	private World world;
 	
 	/**
 	 * Constructor.
@@ -415,6 +417,14 @@ public abstract class Report {
 		}
 		E_X = sum / values.size();
 		return format(sum2/values.size() - (E_X*E_X));
+	}
+
+	public World getWorld() {
+		return world;
+	}
+
+	public void setWorld(World world) {
+		this.world = world;
 	}
 	
 }

@@ -63,4 +63,13 @@ public class EncountersVSUniqueEncountersReport extends Report
 		
 		super.done();
 	}
+
+	public TotalEncountersReport getTotalEncountersReport() {
+		return totalEncountersReport;
+	}
+
+	public UniqueEncountersReport getUniqueEncountersReport() {
+		return uniqueEncountersReport;
+	}
+	
 }

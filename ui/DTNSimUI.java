@@ -95,8 +95,10 @@ public abstract class DTNSimUI {
 			// add reports
 			for (int i=1, n = settings.getInt(NROF_REPORT_S); i<=n; i++){
 				String reportClass = settings.getSetting(REPORT_S + i);
-				addReport((Report)settings.createObject(REPORT_PAC + 
-						reportClass));	
+				Report report = (Report)settings.createObject(REPORT_PAC + 
+						reportClass);
+				report.setWorld(this.scen.getWorld());
+				addReport(report);	
 			}
 
 			double warmupTime = 0;
