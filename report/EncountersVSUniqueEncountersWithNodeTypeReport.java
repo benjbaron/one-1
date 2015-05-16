@@ -32,6 +32,10 @@ public class EncountersVSUniqueEncountersWithNodeTypeReport extends
 			row += "\t" + getMovementType(getWorld().getHosts().get(i));
 			write(row);
 		}
+		
+		if (out != null) {
+			out.close();
+		}
 	}
 
 	public static String getMovementType(DTNHost host) {
