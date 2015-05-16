@@ -37,6 +37,8 @@ public class HomeActivityMovement extends MapBasedMovement
 	
 	public static final String STD_FOR_TIME_DIFF_SETTING = "timeDiffSTD";
 	
+	public static final String WAKE_UP_TIME_SETTING = "wakeupTime";
+	
 	private int mode;
 	private DijkstraPathFinder pathFinder;
 	
@@ -49,6 +51,7 @@ public class HomeActivityMovement extends MapBasedMovement
 	
 	private int timeDiffSTD;
 	private int timeDifference;
+	private int wakeupTime = 0;
 	
 	/**
 	 * Creates a new instance of HomeActivityMovement
@@ -68,6 +71,10 @@ public class HomeActivityMovement extends MapBasedMovement
 		}
 		
 		timeDiffSTD = settings.getInt(STD_FOR_TIME_DIFF_SETTING);
+		System.out.println("timeDiffSTD"+timeDiffSTD);
+		if(settings.contains(WAKE_UP_TIME_SETTING)){
+			wakeupTime = settings.getInt(WAKE_UP_TIME_SETTING, 0)*3600;
+		}
 		
 		if (homeLocationsFile == null) {
 			MapNode[] mapNodes = (MapNode[])getMap().getNodes().
@@ -145,6 +152,8 @@ public class HomeActivityMovement extends MapBasedMovement
 									DAY_LENGTH/2
 								);
 		}
+
+		wakeupTime = proto.wakeupTime;
 	}
 	
 	@Override
@@ -205,7 +214,7 @@ public class HomeActivityMovement extends MapBasedMovement
 	@Override
 	protected double generateWaitTime() {
 		if (mode == AT_HOME_MODE) {
-			return DAY_LENGTH - ((SimClock.getIntTime() + DAY_LENGTH + 
+			return wakeupTime + DAY_LENGTH - ((SimClock.getIntTime() + DAY_LENGTH + 
 					timeDifference) % DAY_LENGTH);
 		} else {
 			return 0;
