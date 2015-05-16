@@ -90,6 +90,16 @@ public abstract class DTNSimUI {
 				
 		try {
 			settings = new Settings();
+			// set time before instantiate scenario
+			double warmupTime = 0;
+			if (settings.contains(MM_WARMUP_S)) {
+				warmupTime = settings.getDouble(MM_WARMUP_S);
+				if (warmupTime > 0) {
+					SimClock c = SimClock.getInstance();
+					c.setTime(-warmupTime);
+				}
+			}
+			
 			this.scen = SimScenario.getInstance();
 
 			// add reports
@@ -101,15 +111,8 @@ public abstract class DTNSimUI {
 				addReport(report);	
 			}
 
-			double warmupTime = 0;
-			if (settings.contains(MM_WARMUP_S)) {
-				warmupTime = settings.getDouble(MM_WARMUP_S);
-				if (warmupTime > 0) {
-					SimClock c = SimClock.getInstance();
-					c.setTime(-warmupTime);
-				}
-			}
-
+			
+			
 			this.world = this.scen.getWorld();
 			world.warmupMovementModel(warmupTime);
 		}
