@@ -38,6 +38,12 @@ public class EncountersVSUniqueEncountersWithNodeTypeReport extends
 		}
 	}
 
+	/**
+	 * returns the class name of the movement model of the given host
+	 * For host of working day movement model, it returns the transportation movement model name.
+	 * @param host
+	 * @return
+	 */
 	public static String getMovementType(DTNHost host) {
 		String ret = null;
 		MovementModel mm = host.getMovement();

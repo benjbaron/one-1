@@ -6,6 +6,7 @@ import java.util.ArrayList;
  * 
  * @author linzhiqi
  * 
+ * The fields' names must match the keys in json
  */
 public class VehicleSchedule {
 	public int vehicle_id;

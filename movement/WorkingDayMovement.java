@@ -179,6 +179,11 @@ public class WorkingDayMovement extends ExtendedMovementModel {
 	}
 
 	@Override
+	/**
+	 * the single host will switch among different movement models.
+	 * The models must have the reference to the host object
+	 * because they need to update the layer-id of the host.
+	 */
 	public void setHost(DTNHost host) {
 		super.setHost(host);
 		busTravellerMM.setHost(host);

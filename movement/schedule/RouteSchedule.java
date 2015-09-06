@@ -7,6 +7,7 @@ import java.util.Set;
  * 
  * @author linzhiqi
  * 
+ * The fields' names must match the keys in json.
  */
 public class RouteSchedule {
 	public int route_id;

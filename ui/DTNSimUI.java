@@ -90,7 +90,8 @@ public abstract class DTNSimUI {
 				
 		try {
 			settings = new Settings();
-			// set time before instantiate scenario
+			// has to set time before instantiate scenario, because getInitialLocation()
+			// and nextPathAvailable() are invoked when instantiating DTNHost in scenario instantiation.
 			double warmupTime = 0;
 			if (settings.contains(MM_WARMUP_S)) {
 				warmupTime = settings.getDouble(MM_WARMUP_S);
@@ -107,6 +108,7 @@ public abstract class DTNSimUI {
 				String reportClass = settings.getSetting(REPORT_S + i);
 				Report report = (Report)settings.createObject(REPORT_PAC + 
 						reportClass);
+				// set world object for report so the report can access some world data like hosts.
 				report.setWorld(this.scen.getWorld());
 				addReport(report);	
 			}

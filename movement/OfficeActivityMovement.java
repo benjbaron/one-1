@@ -142,6 +142,16 @@ public class OfficeActivityMovement extends MapBasedMovement implements
 				officeMinWaitTime, officeMaxWaitTime);
 	}
 	
+	/**
+	 * get the number of floors for each office specified in file OFFICE_FLOOR_FILE_SETTING. If the number of office info contained
+	 * by file OFFICE_FLOOR_FILE_SETTING is less than the number of requested office info, the missing offices are set to 1 floor by
+	 * default.
+	 * @param settings
+	 * @param numOfOffice the number of offices requesting the number of floors info
+	 * @return a list of numbers of floors
+	 * @throws NumberFormatException if the OFFICE_FLOOR_FILE_SETTING file has data can not be parsed as integer
+	 * @throws IOException if there is problem open/read OFFICE_FLOOR_FILE_SETTING file
+	 */
 	private List<Integer> getFloorInfo(Settings settings, int numOfOffice) throws NumberFormatException, IOException {
 		LinkedList<Integer> ret = new LinkedList<Integer>();
 		String officeFloorFile = null;
@@ -165,6 +175,13 @@ public class OfficeActivityMovement extends MapBasedMovement implements
 		return ret;
 	}
 
+	/**
+	 * populate all the number of floor info from a given file into the given integer list
+	 * @param file
+	 * @param ret the given integer list to be populated
+	 * @throws NumberFormatException
+	 * @throws IOException
+	 */
 	private void fillFloorInfo(File file, LinkedList<Integer> ret) throws NumberFormatException, IOException {
 		BufferedReader reader = new BufferedReader(new FileReader(file));
 		String line = null;
@@ -261,13 +278,13 @@ public class OfficeActivityMovement extends MapBasedMovement implements
 		
 		if (startedWorkingTime == -1) {
 			startedWorkingTime = SimClock.getIntTime();
-			setHostLayer(this.officeFloor);//only is set once when starting working at office
+			setHostLayer(this.officeFloor);//switch to the layer of its office when about starting working
 		}
 		if (SimClock.getIntTime() - startedWorkingTime >= workDayLength) {
 			Path path =  new Path(1);
 			path.addWaypoint(lastWaypoint.clone());
 			ready = true;
-			setHostLayer(0);
+			setHostLayer(0);//switch to the ground layer when finished working hours
 			return path;
 		}
 		Coord c;

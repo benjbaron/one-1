@@ -71,7 +71,7 @@ public class HomeActivityMovement extends MapBasedMovement
 		}
 		
 		timeDiffSTD = settings.getInt(STD_FOR_TIME_DIFF_SETTING);
-		System.out.println("timeDiffSTD"+timeDiffSTD);
+
 		if(settings.contains(WAKE_UP_TIME_SETTING)){
 			wakeupTime = settings.getInt(WAKE_UP_TIME_SETTING, 0)*3600;
 		}

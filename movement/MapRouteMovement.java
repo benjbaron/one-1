@@ -100,6 +100,14 @@ public class MapRouteMovement extends MapBasedMovement implements
 		}			
 	}
 	
+	/**
+	 * Creates a new MapRouteMovement
+	 * @param settings The Settings object where the settings are read from
+	 * @param isScheduled whether the model is in scheduled mode or not
+	 * @param schedule is required for scheduled mode. Contains the schedule info of this route.
+	 * @param stopIDList is required for scheduled mode. Contains the ids of all the stops this route visits.
+	 * @param stopMapTranslated is required for schedule mode. Contains the location info for stops.
+	 */
 	public MapRouteMovement(Settings settings, boolean isScheduled, VehicleSchedule schedule, List<String> stopIDList, HashMap<String, MapNode> stopMapTranslated) {
 		super(settings);
 		pathFinder = new DijkstraPathFinder(getOkMapNodeTypes());
@@ -164,6 +172,11 @@ public class MapRouteMovement extends MapBasedMovement implements
 	}
 	
 	@Override
+	/**
+	 * returns the seconds to wait before the next time to invoke getPath() method
+	 * For not-scheduled mode, it use super class's logic to generate the wait tiem.
+	 * For scheduled mode, it returns difference between the arriving time on next stop and the current time
+	 */
 	public double generateWaitTime() {
 		if (!isScheduled) {	
 			return super.generateWaitTime();
@@ -171,17 +184,19 @@ public class MapRouteMovement extends MapBasedMovement implements
 		
 		double ret = 0.0;
 		if (passedLastStop(nextTripIndex, nextStopIndex, schedule)){
+			// the schedule is finished already
 			ret = Double.MAX_VALUE;	
 		} else if (isLastStop(nextTripIndex, nextStopIndex, schedule)) {
 			// this is already the last stop of the schedule
 			ret = 0;
 			nextTripIndex++;
 		} else if (nextTripIndex==0 && nextStopIndex==0) {
-			// before start
+			// before start of the schedule
 			currStop = schedule.trips.get(0).get(0);
 			nextStopIndex++;
 			ret = schedule.trips.get(0).get(0).depT - SimClock.getTime(); 
-		} else if (shouldStartNextTrip(nextTripIndex, nextStopIndex, schedule)) {		
+		} else if (shouldStartNextTrip(nextTripIndex, nextStopIndex, schedule)) {
+			// this is the last stop of the current trip
 			ret = schedule.trips.get(nextTripIndex).get(nextStopIndex).depT - SimClock.getTime();
 			nextTripIndex++;
 			nextStopIndex=0;
@@ -203,6 +218,13 @@ public class MapRouteMovement extends MapBasedMovement implements
 		return ret;
 	};
 
+	/**
+	 * 
+	 * @param nextTripIndex2 specifies the index of the trip on the schedule
+	 * @param nextStopIndex2 specifies the index of the stop on the trip
+	 * @param schedule2	the schedule info
+	 * @return true if the given stop is the last stop of the give schedule
+	 */
 	public static boolean isLastStop(int nextTripIndex2, int nextStopIndex2,
 			VehicleSchedule schedule2) {
 		if (nextTripIndex2==(schedule2.trips.size()-1) 
@@ -213,6 +235,13 @@ public class MapRouteMovement extends MapBasedMovement implements
 		}
 	}
 	
+	/**
+	 * 
+	 * @param nextTripIndex2 specifies the index of the trip on the schedule
+	 * @param nextStopIndex2 specifies the index of the stop on the trip
+	 * @param schedule2 the schedule info
+	 * @return true if the given stop index has passed the last stop of the schedule
+	 */
 	public static boolean passedLastStop(int nextTripIndex2, int nextStopIndex2,
 			VehicleSchedule schedule2) {
 		if (nextTripIndex2>=schedule2.trips.size()) {
@@ -222,6 +251,14 @@ public class MapRouteMovement extends MapBasedMovement implements
 		}
 	}
 
+	/**
+	 * 
+	 * @param nextTripIndex2 specifies the index of the trip on the schedule
+	 * @param nextStopIndex2 specifies the index of the stop on the trip
+	 * @param schedule2 schedule2 the schedule info
+	 * @return true if the given trip is not the last trip of the schedule and the given
+	 * stop is the last one on the trip
+	 */
 	public static boolean shouldStartNextTrip(int nextTripIndex2, int nextStopIndex2,
 			VehicleSchedule schedule2) {
 		if (nextTripIndex2==(schedule2.trips.size()-1)){
@@ -265,7 +302,8 @@ public class MapRouteMovement extends MapBasedMovement implements
 	}	
 	
 	/*
-	 * return null when no more trips
+	 * returns the path to next stop, according to the schedule info.
+	 * returns null when no more trips
 	 */
 	public static Path getPathToNextStop(int nextTripIndex2, int nextStopIndex2,
 			VehicleSchedule schedule2, double time, HashMap<String, MapNode> stopMap2, 
@@ -311,6 +349,11 @@ public class MapRouteMovement extends MapBasedMovement implements
 		return p;
 	}
 
+	/**
+	 * 
+	 * @param nodePath the path consisted by MapNodes sequence
+	 * @return returns the total distance between the first and the last MapNodes along the sequence
+	 */
 	public static double getTotalDistance(List<MapNode> nodePath) {
 		double totalDistance = 0;
 		for (int i=0; i<(nodePath.size()-1); i++) {
@@ -366,6 +409,12 @@ public class MapRouteMovement extends MapBasedMovement implements
 		}	
 	}
 	
+	/**
+	 * translate stop ids to stop locations
+	 * @param ids a list of stop ids
+	 * @param map a list of MapNode
+	 * @return returns the list of MapNodes translated from the list of ids
+	 */
 	public static List<MapNode> getRouteStops(List<String> ids, Map<String, MapNode> map) {
 		ArrayList<MapNode> stops = new ArrayList<MapNode>();
 		for (String index : ids){
@@ -375,7 +424,7 @@ public class MapRouteMovement extends MapBasedMovement implements
 	}
 	
 	public void setSchedule(VehicleSchedule schedule) {
-		
+		this.schedule = schedule;
 	}
 
 	public boolean isScheduled() {

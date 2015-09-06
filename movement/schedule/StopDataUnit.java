@@ -4,6 +4,7 @@ package movement.schedule;
  * 
  * @author linzhiqi
  * 
+ * The fields' names must match the keys in json
  */
 public class StopDataUnit {
 	public String stop_id;
